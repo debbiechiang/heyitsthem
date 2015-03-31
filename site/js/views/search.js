@@ -7,6 +7,7 @@ app.SearchView = Backbone.View.extend({
 	apikey: "xc2vh7dnvump4knrzbqw9798",
 	initialize: function(){
 		this.collection = new app.MovieCollection();
+		this.collection.fetch();
 		this.render();
 	}, 
 	events: {
@@ -19,7 +20,7 @@ app.SearchView = Backbone.View.extend({
 		var movieTitle;
 		var cast; 
 
-		console.log('searching with apikey ' + self.apikey);
+		// console.log('searching with apikey ' + self.apikey);
 		$('#searchMedia div').children('input').each(function(i, el){
 			movieTitle = $(el).val();
 			var data = {
@@ -40,21 +41,30 @@ app.SearchView = Backbone.View.extend({
 			.done(function(data){
 				_.each(data.movies, function(el, index, list){
 					console.log('RTid for', el.title, ' is: ', el.id);
-					var Movie = {
+					
+					var movie = self.collection.find(function(model){
+						return model.get('RTid') == el.id
+					}) || new app.Movie();
+
+					movie.save({
 						title: el.title, 
 						year: el.year,
 						RTid: +el.id,
 						link: el.links.alternate
-					}; 
+					}, {
+						success: function(){
+							console.log('successfully saved');
+						}, 
+						error: function(model, response, options){
+							console.log(response);
+						}
+					});
 
-					console.log(Movie);
 					// fire off cast list req
 					//var cast = self.getCastList(el.links.cast, el.id, self);
 					
-					// create record in MongoDB 
-					self.collection.save( Movie );
 				}, self);
-				console.log('data', data);
+
 			});
 
 

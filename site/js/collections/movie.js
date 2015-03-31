@@ -4,5 +4,5 @@ var app = app || {};
 
 app.MovieCollection = Backbone.Collection.extend({
 	model: app.Movie, 
-	url: '/api/movies'
+	url: '/api/media'
 });

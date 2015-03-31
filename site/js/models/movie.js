@@ -3,12 +3,16 @@
 var app = app || {};
 
 app.Movie = Backbone.Model.extend({
-	idAttribute: 'rtID',
+	url: '/api/media',
 	defaults: {
 		title: 'unknown',
 		year: 'unknown',
 		link: 'http://www.rotten-tomatoes.com',
-		rtID: null,
+		RTid: null,
 		cast: []
+	}, 
+	parse: function( response ) {
+	    response.id = response.RTid;
+	    return response;
 	}
 });

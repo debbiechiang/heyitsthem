@@ -28,34 +28,35 @@ app.configure( function(){
 // app.get('/api', function(req, res){
 // 	res.send('Library API is running');
 // });
-// // get all books
-// app.get('/api/books', function(req, res){
+// get all books
+app.get('/api/media', function(req, res){
 
-// 	// MongoDB function find (conditions, fields, options, callback)
-// 	// but since we are getting all books we only need the callback.
-// 	return BookModel.find(function(err, books){
-// 		if (!err){
-// 			return res.send(books);
-// 		} else {
-// 			return console.log(err);
-// 		}
-// 	})
-// }); 
+	// MongoDB function find (conditions, fields, options, callback)
+	// but since we are getting all books we only need the callback.
+	return MediaModel.find(function(err, media){
+		if (!err){
+			return res.send(media);
+		} else {
+			return console.log(err);
+		}
+	})
+}); 
 // insert a new book
-app.post('/api/movies', function (req, res){
+app.post('/api/media', function (req, res){
+	// console.log(req.body);
 	var media = new MediaModel({
 		title: req.body.title,
 		link: req.body.link,
 		year: req.body.year, 
-		RTid: req.body.id
+		RTid: req.body.RTid
 	});
 
 	return media.save(function(err){
 		if (!err){
-			console.log("created " + media.title + "(" + media.RTid + ")");
+			console.log("created " + media.title + "(" + media.RTid + ", _id: " + media._id + ")");
+			
 			// we return this because MongoDB creates an _id attribute
 			// which the client needs when updating or deleting a specific movie
-
 			return res.send(media);
 		} else {
 			console.log(err);
@@ -64,11 +65,11 @@ app.post('/api/movies', function (req, res){
 });
 
 // update a book
-app.put('/api/movies/:id', function(req, res){
+app.put('/api/media', function(req, res){
 	console.log('Updating movie ' + req.body.title);
-	return MediaModel.findById(req.params.id, function(err, media){
-		console.log(media);
+	return MediaModel.findById(req.body._id, function(err, media){
 		if (!err){
+			console.log(media);
 			media.title = req.body.title;
 			media.link = req.body.link;
 			media.year = req.body.releaseDate;
@@ -87,16 +88,16 @@ app.put('/api/movies/:id', function(req, res){
 		});
 	});
 });
-// // get a single movie by id
-// app.get('/api/books/:id', function(req, res){
-// 	return BookModel.findById(req.params.id, function(err, book){
-// 		if (!err){
-// 			return res.send(book);
-// 		} else {
-// 			return console.log(err);
-// 		}
-// 	})
-// })
+// get a single movie by id
+app.get('/api/media/:id', function(req, res){
+	return MediaModel.find({ RTid: req.params.RTid}, function(err, book){
+		if (!err){
+			return res.send(book);
+		} else {
+			return console.log(err);
+		}
+	})
+})
 
 // start server 
 var port = 4711;
@@ -114,9 +115,9 @@ var Actors = new mongoose.Schema({
 
 var Media = new mongoose.Schema({
 	title: String,
-	author: String,
 	link: String,
 	year: Date, 
+	RTid: String,
 	cast: [ Actors ]
 })
 
