@@ -109,9 +109,14 @@ app.listen(port, function(){
 mongoose.connect('mongodb://localhost/library_database');
 
 // schemas
+// var Characters = new mongoose.Schema({
+// 	characters: String
+// });
 var Actors = new mongoose.Schema({
-	actor: String
-})
+	id: String,
+	name: String, 
+	characters: mongoose.Schema.Types.Mixed
+});
 
 var Media = new mongoose.Schema({
 	title: String,
@@ -119,9 +124,9 @@ var Media = new mongoose.Schema({
 	year: Date, 
 	RTid: String,
 	cast: [ Actors ]
-})
+});
 
 // Models
-var ActorModel = mongoose.model('Actor', Actors);
+// var ActorModel = mongoose.model('Actor', Actors);
 var MediaModel = mongoose.model('Media', Media);
 

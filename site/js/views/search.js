@@ -46,6 +46,10 @@ app.SearchView = Backbone.View.extend({
 						return model.get('RTid') == el.id
 					}) || new app.Movie();
 
+					// fire off cast list req
+					console.log(movie.get('cast').length);
+					var cast = (movie.get('cast').length > 0) ? movie.get('cast') : self.getCastList(movie, el.links.cast, el.id, self);
+					
 					movie.save({
 						title: el.title, 
 						year: el.year,
@@ -53,15 +57,13 @@ app.SearchView = Backbone.View.extend({
 						link: el.links.alternate
 					}, {
 						success: function(){
-							console.log('successfully saved');
+							console.log('successfully saved movie');
 						}, 
 						error: function(model, response, options){
 							console.log(response);
 						}
 					});
 
-					// fire off cast list req
-					//var cast = self.getCastList(el.links.cast, el.id, self);
 					
 				}, self);
 
@@ -71,7 +73,7 @@ app.SearchView = Backbone.View.extend({
 
 		});
 	}, 
-	getCastList: function(castlink, id, self){
+	getCastList: function(model, castlink, id, self){
 		var getCast = $.ajax({
 			url: castlink,
 			type: "GET",
@@ -81,7 +83,21 @@ app.SearchView = Backbone.View.extend({
 			dataType: "JSONP"
 		})
 		.done(function(data){
-			return data.cast;
+			console.log(data.cast);
+			console.log(model.toJSON());
+			// save the cast data to the database
+			model.save({
+				cast: data.cast
+			},{
+				success: function(){
+					console.log('successfully saved cast');
+				}, 
+				error: function(model, response, options){
+					console.log(response);
+				}
+			});
+
+			console.log(model.toJSON());
 		});
 	},
 	addMovie: function(){
