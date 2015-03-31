@@ -9,10 +9,15 @@ app.SearchView = Backbone.View.extend({
 		this.collection = new app.MovieCollection();
 		this.collection.fetch();
 		this.render();
+
+		this.listenTo(this.collection, 'change', this.render);
 	}, 
 	events: {
 		'click #search': 'searchRottenTomatoes'
 	}, 
+	// array of deferreds
+	deferred: {},
+	workingMedia: [],
 	searchRottenTomatoes: function(e){
 		e.preventDefault(); 
 
@@ -24,7 +29,7 @@ app.SearchView = Backbone.View.extend({
 		$('#searchMedia div').children('input').each(function(i, el){
 			movieTitle = $(el).val();
 			var data = {
-				page_limit: 2,
+				page_limit: 1,
 				page: 1, 
 				apikey: self.apikey, 
 				callback: "callback"
@@ -32,7 +37,7 @@ app.SearchView = Backbone.View.extend({
 			var url = 'http://api.rottentomatoes.com/api/public/v1.0/movies.json?q=' + encodeURI(movieTitle).replace(/%20/g, "+");
 			// send a search request to rottentomatoes api
 
-			var getMovie = $.ajax({
+			self.deferred.getMovie = $.ajax({
 				url: url,
 				type: "GET",
 				data: data,
@@ -41,30 +46,39 @@ app.SearchView = Backbone.View.extend({
 			.done(function(data){
 				_.each(data.movies, function(el, index, list){
 					console.log('RTid for', el.title, ' is: ', el.id);
-					
+					if (self.collection.find(function(model){return model.get('RTid') == el.id})) {
+						console.log('FOUND A RECORD IN MONGO DB FOR THIS MOVIE');
+					} else {
+						console.log('THIS IS A NEW MOVIE');
+					}
 					var movie = self.collection.find(function(model){
 						return model.get('RTid') == el.id
 					}) || new app.Movie();
 
 					// fire off cast list req
-					console.log(movie.get('cast').length);
-					var cast = (movie.get('cast').length > 0) ? movie.get('cast') : self.getCastList(movie, el.links.cast, el.id, self);
+					// console.log(movie.get('cast').length);
+					self.deferred.getCast = (movie.get('cast').length > 0) ? movie.get('cast') : self.getCastList(movie, el.links.cast, el.id, self);
 					
+					// save movie to the 
 					movie.save({
 						title: el.title, 
 						year: el.year,
 						RTid: +el.id,
 						link: el.links.alternate
 					}, {
-						success: function(){
-							console.log('successfully saved movie');
+						success: function(model, response, options){
+							console.log('successfully saved movie ' + model.get("title"));
 						}, 
 						error: function(model, response, options){
 							console.log(response);
 						}
 					});
 
-					
+					// add the movie to the collection
+					self.collection.add(movie);
+
+					// add this model to the workingMedia;
+					self.workingMedia.push(movie);
 				}, self);
 
 			});
@@ -74,7 +88,7 @@ app.SearchView = Backbone.View.extend({
 		});
 	}, 
 	getCastList: function(model, castlink, id, self){
-		var getCast = $.ajax({
+		$.ajax({
 			url: castlink,
 			type: "GET",
 			data: {
@@ -83,21 +97,20 @@ app.SearchView = Backbone.View.extend({
 			dataType: "JSONP"
 		})
 		.done(function(data){
-			console.log(data.cast);
-			console.log(model.toJSON());
+			// console.log(data.cast);
+			// console.log(model.toJSON());
 			// save the cast data to the database
-			model.save({
+			self.deferred.castSaved = model.save({
 				cast: data.cast
 			},{
-				success: function(){
-					console.log('successfully saved cast');
+				success: function(model, response, options){
+					//console.log(data.cast);
 				}, 
 				error: function(model, response, options){
 					console.log(response);
 				}
 			});
 
-			console.log(model.toJSON());
 		});
 	},
 	addMovie: function(){
