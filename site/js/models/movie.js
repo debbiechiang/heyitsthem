@@ -10,7 +10,7 @@ app.Movie = Backbone.Model.extend({
 		link: 'http://www.rotten-tomatoes.com',
 		RTid: null,
 		cast: []
-	}, 
+	},
 	parse: function( response ) {
 	    response.id = response.RTid;
 	    return response;

@@ -67,6 +67,7 @@ app.post('/api/media', function (req, res){
 // update a book
 app.put('/api/media', function(req, res){
 	console.log('Updating movie ' + req.body.title);
+	console.log(req.body);
 	return MediaModel.findById(req.body._id, function(err, media){
 		if (!err){
 			console.log(media);
