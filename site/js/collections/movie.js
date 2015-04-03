@@ -27,7 +27,8 @@ app.MovieCollection = Backbone.Collection.extend({
 					title: response.movies[i].title,
 					year: response.movies[i].year,
 					link: response.movies[i].links.alternate,
-					RTid: response.movies[i].id
+					RTid: response.movies[i].id,
+					castlink: response.movies[i].links.cast
 				}
 				parsed.push(movieObj);
 			}

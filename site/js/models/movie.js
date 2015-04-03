@@ -8,6 +8,7 @@ app.Movie = Backbone.Model.extend({
 		title: 'unknown',
 		year: 'unknown',
 		link: 'http://www.rotten-tomatoes.com',
+		castlink: null,
 		RTid: null,
 		cast: []
 	},

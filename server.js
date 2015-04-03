@@ -48,13 +48,13 @@ app.post('/api/media', function (req, res){
 		title: req.body.title,
 		link: req.body.link,
 		year: req.body.year, 
-		RTid: req.body.RTid
+		RTid: req.body.RTid,
+		castlink: req.body.castlink
 	});
 
 	return media.save(function(err){
 		if (!err){
 			console.log("created " + media.title + "(" + media.RTid + ", _id: " + media._id + ")");
-			
 			// we return this because MongoDB creates an _id attribute
 			// which the client needs when updating or deleting a specific movie
 			return res.send(media);
@@ -75,6 +75,7 @@ app.put('/api/media', function(req, res){
 			media.link = req.body.link;
 			media.year = req.body.releaseDate;
 			media.cast = req.body.cast;
+			media.castlink = req.body.castlink;
 			media.RTid = +req.body.id;
 		}
 
@@ -124,6 +125,7 @@ var Media = new mongoose.Schema({
 	link: String,
 	year: Date, 
 	RTid: String,
+	castlink: String,
 	cast: [ Actors ]
 });
 
