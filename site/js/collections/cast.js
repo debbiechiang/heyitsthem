@@ -13,17 +13,19 @@ app.Cast = Backbone.Collection.extend({
 		return Backbone.sync(method, model, options);
 	},
 	parse: function(response){
+		console.log(response.cast);
 		if (response.cast){
 			var parsed = [];
 			for (var i = 0; i < response.cast.length; i++){
 				var actorObj = {
-					characters : response.cast.character,
-					id: response.cast[i].id,
+					character : response.cast[i].character,
+					TMDBid: response.cast[i].id,
 					name: response.cast[i].name, 
 					img: response.cast[i].profile_path
 				}
 				parsed.push(actorObj);
 			}
+			console.log(parsed);
 			return parsed;
 		} 
 	}

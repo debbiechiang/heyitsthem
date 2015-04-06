@@ -67,7 +67,7 @@ app.SearchView = Backbone.View.extend({
 						collection.each(function(model){
 							if (movieModel = self.collection.dbCollection.find(function(movie){return movie.get('TMDBid') == model.get('TMDBid')})) {
 								console.log('FOUND A RECORD IN MONGO DB FOR ' + model.get('title'));
-								self.working.push(self.collection.workingCollection.add(movieModel.clone()));
+								self.working.push(self.collection.workingCollection.add(movieModel));
 							} else {
 								console.log('THIS IS A NEW ' + model.get('mediaType') + ': ' + model.get('title'));
 								// id was set by app.Movie parse function when
@@ -114,7 +114,7 @@ app.SearchView = Backbone.View.extend({
 				movieModel.set({cast: collection});
 				movieModel.save({}, {
 					success: function(model, response, options){
-						self.working.push(self.collection.workingCollection.add(model.clone()));
+						self.working.push(self.collection.workingCollection.add(model));
 					}
 				});
 			},
@@ -126,25 +126,43 @@ app.SearchView = Backbone.View.extend({
 	getOverlap: function(){
 		var self = this;
 
-		console.log(self.collection.workingCollection.toJSON());
 		// this needs to be a Promise, somehow
 		if (self.collection.workingCollection.length > 1){
 			var castOverlap = [];
+			var castModels = [];
 			var casts = self.collection.workingCollection.pluck("cast");
-
+			console.log("casts: ", casts);
 			castOverlap = _.intersection.apply(this, _.map(casts, function(el){
-				return _.pluck(el, "id");
+				return _.pluck(el, "TMDBid");
 			}));
 
-			// console.log(castOverlap);
+			console.log("castOverlap: " , castOverlap);
 
-			castModels = _.map(castOverlap, function(val, i, list){
-				return _.findWhere(casts[0], {id: val});
+			castModels = _.map(castOverlap, function(tmdbid, i, list){
+				// get the list of roles for this tmdbid. 
+				var roles = _.map(casts, function(cast, i, list){
+					return _.findWhere(cast, {TMDBid: tmdbid});
+				})
+
+				console.log('roles', roles);
+				console.log('tmdbid', tmdbid);
+				var actorModel = _.reduce(roles, function(memo, role, i){ 
+					console.log('memo', memo);
+					return {
+						name: role.name,
+						img: role.img,
+						TMDBid: tmdbid,
+						character: memo.character + ", " + role.character
+					}
+				});
+
+				console.log('actorModel', actorModel);
+
+				return actorModel;
 			})
 
+			console.log("castModels: ", castModels);
 			self.trigger('gotOverlap', castModels);
-
-
 		}
 	},
 	removeAll: function(){
@@ -152,8 +170,6 @@ app.SearchView = Backbone.View.extend({
 	},
 	render: function(castOverlap){
 		var self = this;
-
-		console.log(castOverlap);
 
 		_.each(castOverlap, function(actor){
 			var actorModel  = new app.Actor(actor);

@@ -8,8 +8,7 @@ app.ActorView = Backbone.View.extend({
 
 	deleteActor: function(){
 		// delete model
-		// console.log(this.model);
-		// this.model.trigger('destroy');
+		// this.model.destroy();
 
 		// delete view
 		this.remove();

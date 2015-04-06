@@ -3,10 +3,10 @@
 var app = app || {};
 
 app.Actor = Backbone.Model.extend({
-	idAttribute: '_id',
 	defaults: {
-		characters : [],
-		id: null,
-		name: ""
+		character : "",
+		TMDBid: null,
+		name: "",
+		img: ""
 	}
 })

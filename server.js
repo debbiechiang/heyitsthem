@@ -43,13 +43,11 @@ app.get('/api/media', function(req, res){
 }); 
 // insert a new book
 app.post('/api/media', function (req, res){
-	// console.log(req.body);
 	var media = new MediaModel({
 		title: req.body.title,
-		link: req.body.link,
-		year: req.body.year, 
 		TMDBid: req.body.TMDBid,
-		castlink: req.body.castlink
+		popularity: req.body.popularity,
+		mediaType: req.body.mediaType
 	});
 
 	return media.save(function(err){
@@ -64,18 +62,74 @@ app.post('/api/media', function (req, res){
 	})
 });
 
-// update a book
+// insert a new actor
+app.post('/api/actor', function(req, res){
+	var actor = new ActorModel({
+		TMDBid: req.body.id,
+		name: req.body.name,
+		character: req.body.character,
+		img: req.body.img
+	});
+
+	return actor.save(function(err){
+		if (!err){
+			console.log("saved " + actor.name + " to the DB!");
+			return res.send(actor);
+		} else {
+			console.log(err);
+		}
+	});
+});
+
+// update an actor
+app.put('/api/actor/:id', function(req, res){
+	console.log('Updating actor ' + req.body.name);
+	return ActorModel.findById(req.body._id, function(err, actor){
+		if (!err){
+			actor.TMDBid = req.body.id,
+			actor.name = req.body.name,
+			actor.character = req.body.character,
+			actor.img = req.body.img
+		}
+
+		return actor.save(function(err){
+			if (!err){
+				return res.send(actor)
+			} else {
+				console.log(err);
+			}
+
+			return res.send(actor);
+		});
+	})
+});
+
+// delete an actor
+app.delete('/api/actor/:id', function(req, res){
+	console.log('Deleting actor '+ req.body.name);
+	return ActorModel.findById(req.body._id, function(err, actor){
+		return actor.remove(function(err){
+			if (!err){
+				console.log('actor deleted');
+				return response.send('');
+			} else {
+				console.log(err);
+			}
+		})
+	})
+});
+
+// update a movie
 app.put('/api/media', function(req, res){
 	console.log('Updating movie ' + req.body.title);
 	console.log(req.body);
 	return MediaModel.findById(req.body._id, function(err, media){
 		if (!err){
 			media.title = req.body.title;
-			media.link = req.body.link;
-			media.year = req.body.releaseDate;
 			media.cast = req.body.cast;
-			media.castlink = req.body.castlink;
 			media.TMDBid = +req.body.id;
+			media.popularity = req.body.popularity;
+			media.mediaType = req.body.mediaType;
 		}
 
 		return media.save(function(err){
@@ -92,9 +146,9 @@ app.put('/api/media', function(req, res){
 });
 // get a single movie by id
 app.get('/api/media/:id', function(req, res){
-	return MediaModel.find({ TMDBid: req.params.TMDBid}, function(err, book){
+	return MediaModel.find({ TMDBid: req.params.TMDBid}, function(err, media){
 		if (!err){
-			return res.send(book);
+			return res.send(media);
 		} else {
 			return console.log(err);
 		}
@@ -115,7 +169,7 @@ mongoose.connect('mongodb://localhost/library_database');
 // 	characters: String
 // });
 var Actors = new mongoose.Schema({
-	id: Number,
+	TMDBid: Number,
 	name: String, 
 	character: String,
 	img: String
@@ -130,6 +184,6 @@ var Media = new mongoose.Schema({
 });
 
 // Models
-// var ActorModel = mongoose.model('Actor', Actors);
+var ActorModel = mongoose.model('Actor', Actors);
 var MediaModel = mongoose.model('Media', Media);
 

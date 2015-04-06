@@ -26,7 +26,10 @@ module.exports = function(grunt){
 
 		},
 		watch: {
-			
+			all: {
+				files : ['site/js/app.js', 'site/js/views/*', 'site/js/models/*', 'site/js/collections/*'],
+				tasks: 'concat:all'
+			}
 		}
 	});
 
@@ -36,6 +39,6 @@ module.exports = function(grunt){
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 
-	grunt.registerTask('default', [ 'bower_concat', 'concat','uglify']);
+	grunt.registerTask('default', [ 'bower_concat', 'concat','uglify', 'watch']);
 
 }
