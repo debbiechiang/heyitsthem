@@ -4,15 +4,12 @@ var app = app || {};
 
 app.MovieCollection = Backbone.Collection.extend({
 	model: app.Movie, 
-	url: function(){ return 'http://api.rottentomatoes.com/api/public/v1.0/movies.json?q=' + encodeURI(this.movieTitle).replace(/%20/g, "+")},
+	url: function(){ return 'http://api.themoviedb.org/3/search/multi?query=' + encodeURI(this.movieTitle).replace(/%20/g, "+")},
 	sync: function(method, model, options){
 		options.timeout = 10000;
-		options.dataType = "jsonp";
 		options.data = {
-			page_limit: 1,
 			page: 1, 
-			apikey: "xc2vh7dnvump4knrzbqw9798",
-			callback: "callback"
+			api_key: "3ad868d8cde55463944788618a489c37"
 		};
 		return Backbone.sync(method, model, options);
 	},
@@ -20,19 +17,23 @@ app.MovieCollection = Backbone.Collection.extend({
 		// console.log('response is: ')
 		// console.log(response);
 
-		if (response.movies){
+		if (response.results){
 			var parsed = [];
-			for (var i = 0; i < response.movies.length; i++){
-				var movieObj = {
-					title: response.movies[i].title,
-					year: response.movies[i].year,
-					link: response.movies[i].links.alternate,
-					RTid: response.movies[i].id,
-					castlink: response.movies[i].links.cast
+			for (var i = 0; i < response.results.length; i++){
+				// limit popularity and also restrict multi-search results to 
+				// TV shows and movies
+				if (response.results[i].popularity > .005 && (response.results[i].media_type === "movie" || response.results[i].media_type === "tv")){
+					var mediaObj = {
+						title: (response.results[i].media_type === "movie") ? response.results[i].title : response.results[i].name,
+						popularity: response.results[i].popularity,
+						TMDBid: response.results[i].id,
+						mediaType: response.results[i].media_type
+					}
+					// TEMPORARILY only return the first result
+					return mediaObj
+					// parsed.push(mediaObj);
 				}
-				parsed.push(movieObj);
 			}
-			// console.log(parsed);
 			return parsed;
 		} 
 

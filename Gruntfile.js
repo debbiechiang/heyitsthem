@@ -29,6 +29,6 @@ module.exports = function(grunt){
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 
-	grunt.registerTask('default', ['uglify', 'bower_concat:all']);
+	grunt.registerTask('default', [ 'bower_concat', 'uglify']);
 
 }

@@ -4,20 +4,35 @@ var app = app || {};
 
 app.SearchView = Backbone.View.extend({
 	el: '#media', 
-	apikey: "xc2vh7dnvump4knrzbqw9798",
+	apikey: "3ad868d8cde55463944788618a489c37",
+	img: {
+		"base_url": "",
+		"profile_size": ""
+	},
 	promises: [],
 	working: [],
 	initialize: function(){
 		var self = this;
 
+		// get the TMDB config object
+		$.get("http://api.themoviedb.org/3/configuration?api_key=" + self.apikey)
+			.done(function(data){
+				self.img.base_url = data.images.base_url;
+				self.img.profile_size = data.images.profile_sizes[0];
+			});
+
 		this.collection = {
-			RTcollection: new app.MovieCollection(),
+			TMDBcollection: new app.MovieCollection(),
 			dbCollection: new app.DBMovieCollection(),
 			workingCollection: new app.WorkingCollection(),
 			cast: new app.Cast()
 		}
 
-		this.collection.dbCollection.fetch();
+		this.collection.dbCollection.fetch({
+			success: function(collection, response, object){
+				console.log(collection.toJSON())
+			}
+		});
 
 		this.listenTo(this.collection.workingCollection, 'add', this.getOverlap);
 		this.listenTo(this.collection.workingCollection, 'empty', this.removeAll);
@@ -30,9 +45,9 @@ app.SearchView = Backbone.View.extend({
 
 	}, 
 	events: {
-		'click #search': 'searchRottenTomatoes'
+		'click #search': 'searchTMDB'
 	}, 
-	searchRottenTomatoes: function(e){
+	searchTMDB: function(e){
 		e.preventDefault(); 
 
 		var self = this;
@@ -43,28 +58,26 @@ app.SearchView = Backbone.View.extend({
 		self.collection.workingCollection.reset();
 
 		$('#searchMedia div').children('input').each(function(i, el){
-			if ((self.collection.RTcollection.movieTitle = $.trim($(el).val())) != "") {
+			if ((self.collection.TMDBcollection.movieTitle = $.trim($(el).val())) != "") {
 
-				self.collection.RTcollection.fetch({
+				self.collection.TMDBcollection.fetch({
 					success: function (collection, response, options){
 						// at this point, you just got some JSON from the Rotten Tomatoes server. 
 						// It's in the form of a model, but it's not saved to the Collection or to the database yet. 
 						collection.each(function(model){
-							if (movieModel = self.collection.dbCollection.find(function(movie){return movie.get('RTid') == model.get('RTid')})) {
+							if (movieModel = self.collection.dbCollection.find(function(movie){return movie.get('TMDBid') == model.get('TMDBid')})) {
 								console.log('FOUND A RECORD IN MONGO DB FOR ' + model.get('title'));
 								self.working.push(self.collection.workingCollection.add(movieModel.clone()));
-								// console.log(existing.toJSON());
-								// self.workingCast.push(existing.get("cast"));
 							} else {
-								console.log('THIS IS A NEW MOVIE ' + model.get('title'));
+								console.log('THIS IS A NEW ' + model.get('mediaType') + ': ' + model.get('title'));
 								// id was set by app.Movie parse function when
-								// the movieCollection getter pulled it from the RottenTomatoes API.
+								// the movieCollection getter pulled it from the TMDB API.
 								// Set it to null if we want the create method to work correctly on the 
 								// dbCollection. 
 								model.set({id: null});
 								self.collection.dbCollection.create(model, {
 									success: function(){
-										console.log('FINISHED CREATING');
+										console.log('FINISHED CREATING ', model.get('title'));
 										if (model.get('cast').length === 0){
 											console.log('getting the cast list');
 											self.getCastList(model);
@@ -88,15 +101,19 @@ app.SearchView = Backbone.View.extend({
 	}, 
 	getCastList: function(movieModel){
 		var self = this;
-		this.collection.cast.castlink = movieModel.get("castlink");
+		// get the media type 
+		this.collection.cast.mediaType = movieModel.get('mediaType');
+		// get the Mongo ID for saving the cast list into the DB
 		this.collection.cast.id = movieModel.get('_id');
+		// get the TMDB id to search by 
+		this.collection.cast.TMDBid = movieModel.get('TMDBid');
+
 		this.collection.cast.fetch({
 			success: function(collection, response, options){
 				console.log("successfully fetched cast list")
 				movieModel.set({cast: collection});
 				movieModel.save({}, {
 					success: function(model, response, options){
-						console.log(model.toJSON());
 						self.working.push(self.collection.workingCollection.add(model.clone()));
 					}
 				});
@@ -109,6 +126,7 @@ app.SearchView = Backbone.View.extend({
 	getOverlap: function(){
 		var self = this;
 
+		console.log(self.collection.workingCollection.toJSON());
 		// this needs to be a Promise, somehow
 		if (self.collection.workingCollection.length > 1){
 			var castOverlap = [];
@@ -128,13 +146,6 @@ app.SearchView = Backbone.View.extend({
 
 
 		}
-		// self.workingCastById = _.map(self.workingCast, function(castList){
-		// 	return _.map(castList, function(actor){
-		// 		return actor.id;
-		// 	})
-		// })
-		// console.log(_.flatten(self.workingCastById, true));
-		// console.log(_.intersection(workingCastById));
 	},
 	removeAll: function(){
 		var self = this;
@@ -146,6 +157,10 @@ app.SearchView = Backbone.View.extend({
 
 		_.each(castOverlap, function(actor){
 			var actorModel  = new app.Actor(actor);
+			actorModel.set({
+				'base_url': self.img.base_url,
+				'profile_size': self.img.profile_size
+			})
 			var actorView = new app.ActorView({
 				model: actorModel
 			});
@@ -153,23 +168,7 @@ app.SearchView = Backbone.View.extend({
 			actorView.listenTo(self.collection.workingCollection, 'empty', actorView.deleteActor);
 			// actorView.listenTo('empty', this.deleteActor);
 			self.$el.append(actorView.render().el);
-		})
-		// self.collection.workingCollection.each(function(model){
-		// 	var cast = model.get('cast');
-		// 	_.each(cast, function(actor){
-		// 		var actorModel  = new app.Actor(actor);
-		// 		var actorView = new app.ActorView({
-		// 			model: actorModel
-		// 		});
-
-		// 		actorView.listenTo(self.collection.workingCollection, 'empty', actorView.deleteActor);
-		// 		// actorView.listenTo('empty', this.deleteActor);
-		// 		self.$el.append(actorView.render().el);
-		// 	})
-		// 	// cast.each(function(actor){
-		// 	// 	self.$el.append(app.ActorView.render().el);
-		// 	// })
-		// })
+		});
 		return this;
 	}
 });
