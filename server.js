@@ -70,7 +70,6 @@ app.put('/api/media', function(req, res){
 	console.log(req.body);
 	return MediaModel.findById(req.body._id, function(err, media){
 		if (!err){
-			console.log(media);
 			media.title = req.body.title;
 			media.link = req.body.link;
 			media.year = req.body.releaseDate;
@@ -82,6 +81,7 @@ app.put('/api/media', function(req, res){
 		return media.save(function(err){
 			if (!err) {
 				console.log('media updated');
+				console.log(media);
 				return res.send(media);
 			} else {
 				console.log(err);
