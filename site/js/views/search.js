@@ -5,11 +5,8 @@ var app = app || {};
 app.SearchView = Backbone.View.extend({
 	el: '#media', 
 	apikey: "xc2vh7dnvump4knrzbqw9798",
-	workingCast: [],
-	workingCastById: [],
-	getTitle: null,
-	getCast: null,
 	promises: [],
+	working: [],
 	initialize: function(){
 		var self = this;
 
@@ -29,7 +26,7 @@ app.SearchView = Backbone.View.extend({
 
 		// this.listenTo(this.collection, 'reset', this.render);
 		
-		this.render();
+		// this.render();
 
 	}, 
 	events: {
@@ -55,7 +52,7 @@ app.SearchView = Backbone.View.extend({
 						collection.each(function(model){
 							if (movieModel = self.collection.dbCollection.find(function(movie){return movie.get('RTid') == model.get('RTid')})) {
 								console.log('FOUND A RECORD IN MONGO DB FOR ' + model.get('title'));
-								self.collection.workingCollection.add(movieModel.clone());
+								self.working.push(self.collection.workingCollection.add(movieModel.clone()));
 								// console.log(existing.toJSON());
 								// self.workingCast.push(existing.get("cast"));
 							} else {
@@ -100,7 +97,7 @@ app.SearchView = Backbone.View.extend({
 				movieModel.save({}, {
 					success: function(model, response, options){
 						console.log(model.toJSON());
-						self.collection.workingCollection.add(model.clone());
+						self.working.push(self.collection.workingCollection.add(model.clone()));
 					}
 				});
 			},
@@ -141,9 +138,6 @@ app.SearchView = Backbone.View.extend({
 	},
 	removeAll: function(){
 		var self = this;
-
-
-
 	},
 	render: function(castOverlap){
 		var self = this;
