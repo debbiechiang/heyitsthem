@@ -15,8 +15,9 @@ app.ActorView = Backbone.View.extend({
 	template: _.template( $('#actorTemplate').html() ),
 
 	deleteActor: function(){
+		console.log('trying to delete '+ this.model.get('name'));
 		// delete model
-		// this.model.destroy();
+		this.model.destroy();
 
 		// delete view
 		this.remove();
@@ -37,7 +38,7 @@ app.SearchView = Backbone.View.extend({
 		"base_url": "",
 		"profile_size": ""
 	},
-	promises: [],
+	fields: null,
 	working: [],
 	initialize: function(){
 		var self = this;
@@ -49,10 +50,11 @@ app.SearchView = Backbone.View.extend({
 				self.img.profile_size = data.images.profile_sizes[0];
 			});
 
+
 		this.collection = {
 			TMDBcollection: new app.MovieCollection(),
 			dbCollection: new app.DBMovieCollection(),
-			workingCollection: new app.WorkingCollection(),
+			workingCast: new app.WorkingCast(),
 			cast: new app.Cast()
 		}
 
@@ -62,10 +64,9 @@ app.SearchView = Backbone.View.extend({
 			}
 		});
 
-		this.listenTo(this.collection.workingCollection, 'add', this.getOverlap);
-		this.listenTo(this.collection.workingCollection, 'empty', this.removeAll);
+		this.listenTo(this, 'checkOverlap', this.getOverlap);
+		this.listenTo(this.collection.workingCast, 'empty', this.removeAll);
 		this.listenTo(this, 'gotOverlap', this.render);
-
 
 		// this.listenTo(this.collection, 'reset', this.render);
 		
@@ -80,10 +81,14 @@ app.SearchView = Backbone.View.extend({
 
 		var self = this;
 
+		// get the number of fields to check
+		self.fields = this.$('.media').length;
 
-		// reset workingCollection
-		self.collection.workingCollection.trigger('empty');
-		self.collection.workingCollection.reset();
+		// reset workingCast
+		self.working = [];
+		self.collection.workingCast.trigger('empty');
+		self.collection.workingCast.reset();
+		console.log(self.collection.workingCast.toJSON());
 
 		$('#searchMedia div').children('input').each(function(i, el){
 			if ((self.collection.TMDBcollection.movieTitle = $.trim($(el).val())) != "") {
@@ -95,7 +100,8 @@ app.SearchView = Backbone.View.extend({
 						collection.each(function(model){
 							if (movieModel = self.collection.dbCollection.find(function(movie){return movie.get('TMDBid') == model.get('TMDBid')})) {
 								console.log('FOUND A RECORD IN MONGO DB FOR ' + model.get('title'));
-								self.working.push(self.collection.workingCollection.add(movieModel));
+								self.getCastList(movieModel);
+								// self.working.push(self.collection.workingCast.add(movieModel));
 							} else {
 								console.log('THIS IS A NEW ' + model.get('mediaType') + ': ' + model.get('title'));
 								// id was set by app.Movie parse function when
@@ -106,12 +112,7 @@ app.SearchView = Backbone.View.extend({
 								self.collection.dbCollection.create(model, {
 									success: function(){
 										console.log('FINISHED CREATING ', model.get('title'));
-										if (model.get('cast').length === 0){
-											console.log('getting the cast list');
-											self.getCastList(model);
-										} else {
-											console.log('cast list already exists');
-										}
+										self.getCastList(model);
 									}
 								});
 							}
@@ -127,38 +128,49 @@ app.SearchView = Backbone.View.extend({
 
 		});
 	}, 
-	getCastList: function(movieModel){
+	getCastList: function(model){
 		var self = this;
-		// get the media type 
-		this.collection.cast.mediaType = movieModel.get('mediaType');
-		// get the Mongo ID for saving the cast list into the DB
-		this.collection.cast.id = movieModel.get('_id');
-		// get the TMDB id to search by 
-		this.collection.cast.TMDBid = movieModel.get('TMDBid');
 
-		this.collection.cast.fetch({
-			success: function(collection, response, options){
-				console.log("successfully fetched cast list")
-				movieModel.set({cast: collection});
-				movieModel.save({}, {
-					success: function(model, response, options){
-						self.working.push(self.collection.workingCollection.add(model));
-					}
-				});
-			},
-			error: function(collection, response, options){
-				console.log("there was an error");
-			}
-		});
+		if (model.get('cast').length === 0){
+			console.log('getting the cast list');
+			// get the media type 
+			this.collection.cast.mediaType = model.get('mediaType');
+			// get the Mongo ID for saving the cast list into the DB
+			this.collection.cast.id = model.get('_id');
+			// get the TMDB id to search by 
+			this.collection.cast.TMDBid = model.get('TMDBid');
+
+			this.collection.cast.fetch({
+				success: function(collection, response, options){
+					console.log("successfully fetched cast list")
+					model.set({cast: collection});
+					model.save({}, {
+						success: function(model, response, options){
+							self.working.push(model.get('cast'));
+							self.trigger('checkOverlap');
+							// self.working.push(self.collection.workingCast.add(model));
+						}
+					});
+				},
+				error: function(collection, response, options){
+					console.log("there was an error");
+				}
+			});
+		} else {
+			console.log('cast list already exists');
+			self.working.push(model.get('cast'));
+			self.trigger('checkOverlap');
+		}
+
 	},
 	getOverlap: function(){
 		var self = this;
 
 		// this needs to be a Promise, somehow
-		if (self.collection.workingCollection.length > 1){
+		if (self.working.length === self.fields){
 			var castOverlap = [];
 			var castModels = [];
-			var casts = self.collection.workingCollection.pluck("cast");
+			var casts = self.working;
 			console.log("casts: ", casts);
 			castOverlap = _.intersection.apply(this, _.map(casts, function(el){
 				return _.pluck(el, "TMDBid");
@@ -172,8 +184,8 @@ app.SearchView = Backbone.View.extend({
 					return _.findWhere(cast, {TMDBid: tmdbid});
 				})
 
-				console.log('roles', roles);
-				console.log('tmdbid', tmdbid);
+				// console.log('roles', roles);
+				// console.log('tmdbid', tmdbid);
 				var actorModel = _.reduce(roles, function(memo, role, i){ 
 					console.log('memo', memo);
 					return {
@@ -204,13 +216,17 @@ app.SearchView = Backbone.View.extend({
 			actorModel.set({
 				'base_url': self.img.base_url,
 				'profile_size': self.img.profile_size
-			})
+			});
+
+			// keep track of the actors with views in the workingCast collection
+			self.collection.workingCast.create(actorModel);
+
 			var actorView = new app.ActorView({
 				model: actorModel
 			});
 
-			actorView.listenTo(self.collection.workingCollection, 'empty', actorView.deleteActor);
-			// actorView.listenTo('empty', this.deleteActor);
+			actorView.listenTo(self.collection.workingCast, 'empty', actorView.deleteActor);
+
 			self.$el.append(actorView.render().el);
 		});
 		return this;
@@ -222,11 +238,16 @@ app.SearchView = Backbone.View.extend({
 var app = app || {};
 
 app.Actor = Backbone.Model.extend({
+	// idAttribute: 'TMDBid',
 	defaults: {
 		character : "",
 		TMDBid: null,
 		name: "",
 		img: ""
+	},
+	parse: function( response ) {
+	    response.id = response._id;
+	    return response;
 	}
 })
 // site/js/models/movie.js
@@ -260,7 +281,6 @@ app.Cast = Backbone.Collection.extend({
 		return Backbone.sync(method, model, options);
 	},
 	parse: function(response){
-		console.log(response.cast);
 		if (response.cast){
 			var parsed = [];
 			for (var i = 0; i < response.cast.length; i++){
@@ -272,7 +292,7 @@ app.Cast = Backbone.Collection.extend({
 				}
 				parsed.push(actorObj);
 			}
-			console.log(parsed);
+			// console.log(parsed);
 			return parsed;
 		} 
 	}
@@ -330,6 +350,7 @@ app.MovieCollection = Backbone.Collection.extend({
 
 var app = app || {};
 
-app.WorkingCollection = Backbone.Collection.extend({
-	model: app.Movie
+app.WorkingCast = Backbone.Collection.extend({
+	model: app.Actor, 
+	url: '/api/actor'
 });

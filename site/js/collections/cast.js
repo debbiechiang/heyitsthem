@@ -13,7 +13,6 @@ app.Cast = Backbone.Collection.extend({
 		return Backbone.sync(method, model, options);
 	},
 	parse: function(response){
-		console.log(response.cast);
 		if (response.cast){
 			var parsed = [];
 			for (var i = 0; i < response.cast.length; i++){
@@ -25,7 +24,7 @@ app.Cast = Backbone.Collection.extend({
 				}
 				parsed.push(actorObj);
 			}
-			console.log(parsed);
+			// console.log(parsed);
 			return parsed;
 		} 
 	}

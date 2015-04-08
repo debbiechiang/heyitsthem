@@ -65,7 +65,7 @@ app.post('/api/media', function (req, res){
 // insert a new actor
 app.post('/api/actor', function(req, res){
 	var actor = new ActorModel({
-		TMDBid: req.body.id,
+		TMDBid: req.body.TMDBid,
 		name: req.body.name,
 		character: req.body.character,
 		img: req.body.img
@@ -86,7 +86,7 @@ app.put('/api/actor/:id', function(req, res){
 	console.log('Updating actor ' + req.body.name);
 	return ActorModel.findById(req.body._id, function(err, actor){
 		if (!err){
-			actor.TMDBid = req.body.id,
+			actor.TMDBid = req.body.TMDBid,
 			actor.name = req.body.name,
 			actor.character = req.body.character,
 			actor.img = req.body.img
@@ -106,12 +106,13 @@ app.put('/api/actor/:id', function(req, res){
 
 // delete an actor
 app.delete('/api/actor/:id', function(req, res){
-	console.log('Deleting actor '+ req.body.name);
-	return ActorModel.findById(req.body._id, function(err, actor){
+	console.log(req);
+	console.log('Deleting actor '+ req.params.name);
+	return ActorModel.findById(req.params.id, function(err, actor){
 		return actor.remove(function(err){
 			if (!err){
 				console.log('actor deleted');
-				return response.send('');
+				return res.send('');
 			} else {
 				console.log(err);
 			}

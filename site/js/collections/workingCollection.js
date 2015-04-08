@@ -2,6 +2,7 @@
 
 var app = app || {};
 
-app.WorkingCollection = Backbone.Collection.extend({
-	model: app.Movie
+app.WorkingCast = Backbone.Collection.extend({
+	model: app.Actor, 
+	url: '/api/actor'
 });
