@@ -35,7 +35,9 @@ app.MovieCollection = Backbone.Collection.extend({
 				}
 			}
 			return parsed;
-		} 
+		} else {
+			console.log("TMDB has no record of that title!");
+		}
 
 	}
 });

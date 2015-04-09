@@ -94,6 +94,7 @@ app.SearchView = Backbone.View.extend({
 			if ((self.collection.TMDBcollection.movieTitle = $.trim($(el).val())) != "") {
 
 				self.collection.TMDBcollection.fetch({
+					reset: true,
 					success: function (collection, response, options){
 						// at this point, you just got some JSON from the Rotten Tomatoes server. 
 						// It's in the form of a model, but it's not saved to the Collection or to the database yet. 
@@ -342,7 +343,9 @@ app.MovieCollection = Backbone.Collection.extend({
 				}
 			}
 			return parsed;
-		} 
+		} else {
+			console.log("TMDB has no record of that title!");
+		}
 
 	}
 });
