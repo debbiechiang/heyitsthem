@@ -25,43 +25,66 @@ app.configure( function(){
 });
 
 // Routes
-// app.get('/api', function(req, res){
-// 	res.send('Library API is running');
-// });
-// get all books
-app.get('/api/media', function(req, res){
-
-	// MongoDB function find (conditions, fields, options, callback)
-	// but since we are getting all books we only need the callback.
-	return MediaModel.find(function(err, media){
+// get the config object
+app.get('/api/config', function(req, res){
+	return ConfigModel.findOne(function(err, config){
 		if (!err){
-			return res.send(media);
+			return res.send(config);
 		} else {
 			return console.log(err);
 		}
 	})
-}); 
-// insert a new book
-app.post('/api/media', function (req, res){
-	var media = new MediaModel({
-		title: req.body.title,
-		TMDBid: req.body.TMDBid,
-		popularity: req.body.popularity,
-		mediaType: req.body.mediaType
-	});
+});
+// post new config object
+app.post('/api/config', function(req, res){
+	var config = new ConfigModel({
+		date: new Date(),
+		images: req.body.images,
+		change_keys: req.body.change_keys
+	}); 
 
-	return media.save(function(err){
-		if (!err){
-			console.log("created " + media.title + "(" + media.TMDBid + ", _id: " + media._id + ")");
-			// we return this because MongoDB creates an _id attribute
-			// which the client needs when updating or deleting a specific movie
-			return res.send(media);
+	return config.save(function(err){
+		if (!err){ 
+			console.log("saved new TMDB config object"); 
+			return res.send(config)
 		} else {
-			console.log(err);
+			return console.log(err);
 		}
+	})
+})
+
+// update the config object
+app.put('/api/config/:id', function(req, res){
+	console.log('Inputting an updated config object');
+	return ConfigModel.findById(req.body.id, function(err, config){
+		if (!err){
+			config.date = new Date();
+			config.images = req.body.images;
+			config.change_keys = req.body.change_keys;
+		}
+
+		return config.save(function(err, config){
+			if (!err){
+				return res.send(config);
+			} else {
+				console.log(err)
+			}
+
+			return res.send(config);
+		})
 	})
 });
 
+// get all actors
+app.get('/api/actor', function(req, res){
+	return ActorModel.find(function(err, actors){
+		if (!err){
+			return res.send(actors)
+		} else {
+			return console.log(err);
+		}
+	})
+})
 // insert a new actor
 app.post('/api/actor', function(req, res){
 	var actor = new ActorModel({
@@ -76,7 +99,7 @@ app.post('/api/actor', function(req, res){
 			console.log("saved " + actor.name + " to the DB!");
 			return res.send(actor);
 		} else {
-			console.log(err);
+			return console.log(err);
 		}
 	});
 });
@@ -121,40 +144,40 @@ app.delete('/api/actor/:id', function(req, res){
 });
 
 // update a movie
-app.put('/api/media', function(req, res){
-	console.log('Updating movie ' + req.body.title);
-	console.log(req.body);
-	return MediaModel.findById(req.body._id, function(err, media){
-		if (!err){
-			media.title = req.body.title;
-			media.cast = req.body.cast;
-			media.TMDBid = +req.body.id;
-			media.popularity = req.body.popularity;
-			media.mediaType = req.body.mediaType;
-		}
+// app.put('/api/media', function(req, res){
+// 	console.log('Updating movie ' + req.body.title);
+// 	console.log(req.body);
+// 	return MediaModel.findById(req.body._id, function(err, media){
+// 		if (!err){
+// 			media.title = req.body.title;
+// 			media.cast = req.body.cast;
+// 			media.TMDBid = +req.body.id;
+// 			media.popularity = req.body.popularity;
+// 			media.mediaType = req.body.mediaType;
+// 		}
 
-		return media.save(function(err){
-			if (!err) {
-				console.log('media updated');
-				console.log(media);
-				return res.send(media);
-			} else {
-				console.log(err);
-			}
-			return res.send(media);
-		});
-	});
-});
+// 		return media.save(function(err){
+// 			if (!err) {
+// 				console.log('media updated');
+// 				console.log(media);
+// 				return res.send(media);
+// 			} else {
+// 				console.log(err);
+// 			}
+// 			return res.send(media);
+// 		});
+// 	});
+// });
 // get a single movie by id
-app.get('/api/media/:id', function(req, res){
-	return MediaModel.find({ TMDBid: req.params.TMDBid}, function(err, media){
-		if (!err){
-			return res.send(media);
-		} else {
-			return console.log(err);
-		}
-	})
-})
+// app.get('/api/media/:id', function(req, res){
+// 	return MediaModel.find({ TMDBid: req.params.TMDBid}, function(err, media){
+// 		if (!err){
+// 			return res.send(media);
+// 		} else {
+// 			return console.log(err);
+// 		}
+// 	})
+// })
 
 // start server 
 var port = 4711;
@@ -176,15 +199,22 @@ var Actors = new mongoose.Schema({
 	img: String
 });
 
-var Media = new mongoose.Schema({
-	title: String,
-	TMDBid: String,
-	popularity: Number,
-	mediaType: String,
-	cast: [ Actors ]
-});
+var Config = new mongoose.Schema({
+	images: mongoose.Schema.Types.Mixed,
+	change_keys: Array,
+	date: Date, 
+	id: Number
+})
 
+// var Media = new mongoose.Schema({
+// 	title: String,
+// 	TMDBid: String,
+// 	popularity: Number,
+// 	mediaType: String,
+// 	cast: [ Actors ]
+// });
 // Models
 var ActorModel = mongoose.model('Actor', Actors);
-var MediaModel = mongoose.model('Media', Media);
+var ConfigModel = mongoose.model('Config', Config);
+// var MediaModel = mongoose.model('Media', Media);
 
