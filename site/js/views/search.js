@@ -52,15 +52,37 @@ app.SearchView = Backbone.View.extend({
 			success: function(collection){
 				_.invoke(collection.toArray(), "destroy");
 			}
-		})
+		});
 
-		this.listenTo(this, 'checkOverlap', this.getOverlap);
-		this.listenTo(this.collection.workingCast, 'empty', this.removeAll);
-		this.listenTo(this, 'gotOverlap', this.render);
+		// loop through the inputs and: 
+		_.each(this.$("input"), function(el, i){
+			// create a Cast collection for each input 
+			if (typeof self.collection.cast[i] === "undefined"){
+				self.collection.cast.push(new app.Cast());
+			} 
+			
+			// init typeahead to get suggestions for correct media properties. 
+			$(el).typeahead({
+				minLength: 2,
+				highlight:true
+			}, {
+				name: "tmdb" + i,
+				source: _.throttle(_.bind(self.getSuggestion, this), 500, {leading: false}),
+				displayKey: "title",
+				templates: {
+					"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %></p>")
+				}
+			});
+		}, this);
+
+		this.listenTo(this, "checkOverlap", this.getOverlap);
+		this.listenTo(this.collection.workingCast, "empty", this.removeAll);
+		this.listenTo(this, "gotOverlap", this.render);
 
 	}, 
 	events: {
-		'click #search': 'searchTMDB'
+		"click #search": "searchTMDB",
+		"typeahead:selected": "processAutocomplete"
 	}, 
 	searchTMDB: function(e){
 		e.preventDefault(); 
@@ -68,29 +90,25 @@ app.SearchView = Backbone.View.extend({
 		var self = this;
 
 		// get the number of fields to check
-		self.fields = this.$('.media').length;
+		self.fields = this.$(".tt-input").length;
 
 		// reset workingCast
 		self.working = [];
-		self.collection.workingCast.trigger('empty');
+		self.collection.workingCast.trigger("empty");
 		self.collection.workingCast.reset();
 
-		$('#searchMedia div').children('input').each(function(i, el){
+		// typeahead will generate extra inputs, so after this.initialize 
+		// you must use .tt-input to mean the original inputs. 
+		this.$(".tt-input").each(function(i, el){
 			if ((self.collection.TMDBcollection.movieTitle = $.trim($(el).val())) != "") {
 
-				// create a Cast collection for each input 
-				if (typeof self.collection.cast[i] === "undefined"){
-					self.collection.cast.push(new app.Cast());
-				} 
-
-				// fetch the TMDB information for each input
 				self.collection.TMDBcollection.fetch({
 					reset: true,
 					success: function (collection, response, options){
 						// at this point, you just got some JSON from the Rotten Tomatoes server. 
 						// It's in the form of a model, but it's not saved to any collections. 
 						collection.each(function(model){
-							self.getCastList(i, model.get('mediaType'), model.get('TMDBid'));
+							self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
 						});
 
 					}, 
@@ -99,13 +117,43 @@ app.SearchView = Backbone.View.extend({
 						console.log("There was an error!")
 					}
 				});
+
 			}
 
 		});
 	}, 
+	getSuggestion: function(query, cb){
+			var self = this;
+
+			self.collection.TMDBcollection.movieTitle = $.trim(query);
+
+			// fetch the TMDB information for each input
+			self.collection.TMDBcollection.fetch({
+				reset: true,
+				success: function (collection, response, options){
+					// at this point, you just got some JSON from the Rotten Tomatoes server. 
+					// It's in the form of a model, but it's not saved to any collections. 
+					// collection.each(function(model){
+						// self.getCastList(i, model.get('mediaType'), model.get('TMDBid'));
+					// });
+					// console.log(collection.toJSON());
+					cb(collection.toJSON());
+					// return collection
+
+				}, 
+
+				error: function(collection, response, options){
+					console.log("There was an error!")
+				}
+			})
+
+	},
+	processAutocomplete: function(event, suggestion, dataset){
+		console.log( suggestion );
+	},
 	getCastList: function(i, mediaType, TMDBid){
 		var self = this;
-
+		console.log(i, mediaType, TMDBid);
 		// use the appropriate cast collection
 		var cast = self.collection.cast[i];
 
@@ -128,22 +176,18 @@ app.SearchView = Backbone.View.extend({
 				console.log("there was an error");
 			}
 		});
-
-
 	},
 	getOverlap: function(castCollection){
 		var self = this;
-		// this needs to be a Promise, somehow
+
 		if (self.working.length === self.fields){
 			var castOverlap = [];
 			var castModels = [];
 			var casts = self.working;
-			// console.log("casts: ", casts);
 			castOverlap = _.intersection.apply(this, _.map(casts, function(el){
 				return el.pluck("TMDBid");
 			}));
 
-			// console.log("castOverlap: " , castOverlap);
 
 			castModels = _.map(castOverlap, function(tmdbid, i, list){
 				// get the list of roles for this tmdbid. 
@@ -151,10 +195,7 @@ app.SearchView = Backbone.View.extend({
 					return cast.findWhere({TMDBid: tmdbid});
 				})
 
-				// console.log('roles', roles);
-				// console.log('tmdbid', tmdbid);
 				var actorModel = roles.reduce(function(memo, role, i){ 
-					// console.log('memo', memo);
 					return {
 						name: role.get('name'),
 						img: role.get('img'),
@@ -163,12 +204,13 @@ app.SearchView = Backbone.View.extend({
 					}
 				});
 
-				// console.log('actorModel', actorModel);
 
 				return actorModel;
 			})
 
-			// console.log("castModels: ", castModels);
+			// console.log(castOverlap);
+			// console.log(castModels);
+
 			self.trigger('gotOverlap', castModels);
 
 			// destroy the castCollections

@@ -22,7 +22,7 @@ app.MovieCollection = Backbone.Collection.extend({
 			for (var i = 0; i < response.results.length; i++){
 				// limit popularity and also restrict multi-search results to 
 				// TV shows and movies
-				if (response.results[i].popularity > .005 && (response.results[i].media_type === "movie" || response.results[i].media_type === "tv")){
+				if (response.results[i].media_type === "movie" || response.results[i].media_type === "tv"){
 					var mediaObj = {
 						title: (response.results[i].media_type === "movie") ? response.results[i].title : response.results[i].name,
 						popularity: response.results[i].popularity,
@@ -30,11 +30,13 @@ app.MovieCollection = Backbone.Collection.extend({
 						mediaType: response.results[i].media_type
 					}
 					// TEMPORARILY only return the first result
-					return mediaObj
-					// parsed.push(mediaObj);
+					// return mediaObj
+					parsed.push(mediaObj);
 				}
 			}
-			return parsed;
+			// sort by popularity and return the top 5 results
+			// underscore is great
+			return _.chain(parsed).sortBy(function(parsed){return parsed.popularity}).reverse().first(5).value();
 		} else {
 			console.log("TMDB has no record of that title!");
 		}

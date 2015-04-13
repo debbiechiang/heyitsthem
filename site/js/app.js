@@ -4,5 +4,5 @@
 var app = app || {};
 
 $(function(){
-	new app.SearchView();
+	imdb = new app.SearchView();
 })
