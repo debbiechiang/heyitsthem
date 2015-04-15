@@ -44,6 +44,7 @@ app.SearchView = Backbone.View.extend({
 		this.collection = {
 			TMDBcollection: new app.MovieCollection(),
 			workingCast: new app.WorkingCast(),
+			media: [],
 			cast: []
 		}
 
@@ -67,7 +68,7 @@ app.SearchView = Backbone.View.extend({
 				highlight:true
 			}, {
 				name: "tmdb" + i,
-				source: _.throttle(_.bind(self.getSuggestion, this), 500, {leading: false}),
+				source: _.throttle(_.bind(self.getSuggestion, this), 300, {leading: false}),
 				displayKey: "title",
 				templates: {
 					"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %></p>")
@@ -101,22 +102,31 @@ app.SearchView = Backbone.View.extend({
 		// you must use .tt-input to mean the original inputs. 
 		this.$(".tt-input").each(function(i, el){
 			if ((self.collection.TMDBcollection.movieTitle = $.trim($(el).val())) != "") {
+				if (typeof self.collection.media[i] != "undefined"){
+					// the movie has been autocompleted and you can trust that this is the right 
+					// media title. Init a cast search on it. 
+					self.getCastList(i, self.collection.media[i].mediaType, self.collection.media[i].TMDBid);
+				} else {
+					// this didn't autocomplete so you need to init a new search for it.
+					self.collection.TMDBcollection.fetch({
+						reset: true,
+						success: function (collection, response, options){
+							if (collection.length > 0){
+								// take the first result returned
+								var model = collection.shift();
+								console.log(model);
+								self.collection.media[i] = model;
+								self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
+							} else {
+								console.log('No results found!');
+							}
+						}, 
 
-				self.collection.TMDBcollection.fetch({
-					reset: true,
-					success: function (collection, response, options){
-						// at this point, you just got some JSON from the Rotten Tomatoes server. 
-						// It's in the form of a model, but it's not saved to any collections. 
-						collection.each(function(model){
-							self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
-						});
-
-					}, 
-
-					error: function(collection, response, options){
-						console.log("There was an error!")
-					}
-				});
+						error: function(collection, response, options){
+							console.log("There was an error!")
+						}
+					});
+				}
 
 			}
 
@@ -131,15 +141,8 @@ app.SearchView = Backbone.View.extend({
 			self.collection.TMDBcollection.fetch({
 				reset: true,
 				success: function (collection, response, options){
-					// at this point, you just got some JSON from the Rotten Tomatoes server. 
-					// It's in the form of a model, but it's not saved to any collections. 
-					// collection.each(function(model){
-						// self.getCastList(i, model.get('mediaType'), model.get('TMDBid'));
-					// });
 					// console.log(collection.toJSON());
 					cb(collection.toJSON());
-					// return collection
-
 				}, 
 
 				error: function(collection, response, options){
@@ -149,11 +152,17 @@ app.SearchView = Backbone.View.extend({
 
 	},
 	processAutocomplete: function(event, suggestion, dataset){
-		console.log( suggestion );
+		var self = this; 
+
+		var i = dataset.slice(4);
+
+		self.collection.media[i] = suggestion;
+
+		console.log(self.collection.media);
 	},
 	getCastList: function(i, mediaType, TMDBid){
 		var self = this;
-		console.log(i, mediaType, TMDBid);
+		console.log(arguments);
 		// use the appropriate cast collection
 		var cast = self.collection.cast[i];
 
@@ -163,6 +172,8 @@ app.SearchView = Backbone.View.extend({
 		// this.collection.cast.id = model.get('_id');
 		// get the TMDB id to search by 
 		cast.TMDBid = TMDBid;
+
+		console.log("cast", cast);
 
 		cast.fetch({
 			success: function(collection, response, options){
@@ -179,7 +190,6 @@ app.SearchView = Backbone.View.extend({
 	},
 	getOverlap: function(castCollection){
 		var self = this;
-
 		if (self.working.length === self.fields){
 			var castOverlap = [];
 			var castModels = [];
