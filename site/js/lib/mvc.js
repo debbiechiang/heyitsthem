@@ -97,10 +97,10 @@ app.SearchView = Backbone.View.extend({
 				highlight:true
 			}, {
 				name: "tmdb" + i,
-				source: _.throttle(_.bind(self.getSuggestion, this), 500, {leading: false}),
+				source: _.throttle(_.bind(self.getSuggestion, this), 300, {leading: false}),
 				displayKey: "title",
 				templates: {
-					"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %></p>")
+					"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %> (<%= date %>)</p>")
 				}
 			});
 		}, this);
@@ -131,23 +131,6 @@ app.SearchView = Backbone.View.extend({
 		// you must use .tt-input to mean the original inputs. 
 		this.$(".tt-input").each(function(i, el){
 			if ((self.collection.TMDBcollection.movieTitle = $.trim($(el).val())) != "") {
-
-				// self.collection.TMDBcollection.fetch({
-				// 	reset: true,
-				// 	success: function (collection, response, options){
-				// 		// at this point, you just got some JSON from the Rotten Tomatoes server. 
-				// 		// It's in the form of a model, but it's not saved to any collections. 
-				// 		collection.each(function(model){
-				// 			self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
-				// 		});
-
-				// 	}, 
-
-				// 	error: function(collection, response, options){
-				// 		console.log("There was an error!")
-				// 	}
-				// });
-
 				if (typeof self.collection.media[i] != "undefined"){
 					// the movie has been autocompleted and you can trust that this is the right 
 					// media title. Init a cast search on it. 
@@ -157,8 +140,15 @@ app.SearchView = Backbone.View.extend({
 					self.collection.TMDBcollection.fetch({
 						reset: true,
 						success: function (collection, response, options){
-							var model = collection.shift();
-							self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
+							if (collection.length > 0){
+								// take the first result returned
+								var model = collection.shift();
+								console.log(model);
+								self.collection.media[i] = model;
+								self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
+							} else {
+								console.log('No results found!');
+							}
 						}, 
 
 						error: function(collection, response, options){
@@ -407,14 +397,16 @@ app.MovieCollection = Backbone.Collection.extend({
 				// limit popularity and also restrict multi-search results to 
 				// TV shows and movies
 				if (response.results[i].media_type === "movie" || response.results[i].media_type === "tv"){
+					var med = response.results[i];
+
 					var mediaObj = {
-						title: (response.results[i].media_type === "movie") ? response.results[i].title : response.results[i].name,
-						popularity: response.results[i].popularity,
-						TMDBid: response.results[i].id,
-						mediaType: response.results[i].media_type
+						title: (med.media_type === "movie") ? med.title : med.name,
+						date: (med.media_type === "movie") ? new Date(med.release_date).getFullYear() : new Date(med.first_air_date).getFullYear(),
+						popularity: med.popularity,
+						TMDBid: med.id,
+						mediaType: med.media_type,
+						poster: med.poster_path 
 					}
-					// TEMPORARILY only return the first result
-					// return mediaObj
 					parsed.push(mediaObj);
 				}
 			}

@@ -23,14 +23,16 @@ app.MovieCollection = Backbone.Collection.extend({
 				// limit popularity and also restrict multi-search results to 
 				// TV shows and movies
 				if (response.results[i].media_type === "movie" || response.results[i].media_type === "tv"){
+					var med = response.results[i];
+
 					var mediaObj = {
-						title: (response.results[i].media_type === "movie") ? response.results[i].title : response.results[i].name,
-						popularity: response.results[i].popularity,
-						TMDBid: response.results[i].id,
-						mediaType: response.results[i].media_type
+						title: (med.media_type === "movie") ? med.title : med.name,
+						date: (med.media_type === "movie") ? new Date(med.release_date).getFullYear() : new Date(med.first_air_date).getFullYear(),
+						popularity: med.popularity,
+						TMDBid: med.id,
+						mediaType: med.media_type,
+						poster: med.poster_path 
 					}
-					// TEMPORARILY only return the first result
-					// return mediaObj
 					parsed.push(mediaObj);
 				}
 			}

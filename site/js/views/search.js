@@ -71,7 +71,7 @@ app.SearchView = Backbone.View.extend({
 				source: _.throttle(_.bind(self.getSuggestion, this), 300, {leading: false}),
 				displayKey: "title",
 				templates: {
-					"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %></p>")
+					"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %> (<%= date %>)</p>")
 				}
 			});
 		}, this);
