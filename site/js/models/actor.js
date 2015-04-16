@@ -5,7 +5,7 @@ var app = app || {};
 app.Actor = Backbone.Model.extend({
 	// idAttribute: 'TMDBid',
 	defaults: {
-		character : "",
+		character : "No overlap found",
 		TMDBid: null,
 		name: "",
 		img: ""

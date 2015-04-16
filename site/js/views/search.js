@@ -76,9 +76,11 @@ app.SearchView = Backbone.View.extend({
 			});
 		}, this);
 
+		// events
 		this.listenTo(this, "checkOverlap", this.getOverlap);
 		this.listenTo(this.collection.workingCast, "empty", this.removeAll);
 		this.listenTo(this, "gotOverlap", this.render);
+		this.listenTo(this, "noresults", this.render);
 
 	}, 
 	events: {
@@ -95,6 +97,7 @@ app.SearchView = Backbone.View.extend({
 
 		// reset workingCast
 		self.working = [];
+		self.collection.media = [];
 		self.collection.workingCast.trigger("empty");
 		self.collection.workingCast.reset();
 
@@ -105,6 +108,7 @@ app.SearchView = Backbone.View.extend({
 				if (typeof self.collection.media[i] != "undefined"){
 					// the movie has been autocompleted and you can trust that this is the right 
 					// media title. Init a cast search on it. 
+
 					self.getCastList(i, self.collection.media[i].mediaType, self.collection.media[i].TMDBid);
 				} else {
 					// this didn't autocomplete so you need to init a new search for it.
@@ -114,16 +118,17 @@ app.SearchView = Backbone.View.extend({
 							if (collection.length > 0){
 								// take the first result returned
 								var model = collection.shift();
-								console.log(model);
+
 								self.collection.media[i] = model;
 								self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
 							} else {
 								console.log('No results found!');
+								self.trigger('noresults');
 							}
 						}, 
 
 						error: function(collection, response, options){
-							console.log("There was an error!")
+							console.log("There was an error! Possibly there were no results found!")
 						}
 					});
 				}
@@ -141,7 +146,6 @@ app.SearchView = Backbone.View.extend({
 			self.collection.TMDBcollection.fetch({
 				reset: true,
 				success: function (collection, response, options){
-					// console.log(collection.toJSON());
 					cb(collection.toJSON());
 				}, 
 
@@ -157,12 +161,9 @@ app.SearchView = Backbone.View.extend({
 		var i = dataset.slice(4);
 
 		self.collection.media[i] = suggestion;
-
-		console.log(self.collection.media);
 	},
 	getCastList: function(i, mediaType, TMDBid){
 		var self = this;
-		console.log(arguments);
 		// use the appropriate cast collection
 		var cast = self.collection.cast[i];
 
@@ -173,11 +174,10 @@ app.SearchView = Backbone.View.extend({
 		// get the TMDB id to search by 
 		cast.TMDBid = TMDBid;
 
-		console.log("cast", cast);
+		// console.log("cast", cast);
 
 		cast.fetch({
 			success: function(collection, response, options){
-				console.log("successfully fetched cast list")
 				self.working.push(collection);
 				self.trigger('checkOverlap', cast);
 				// self.working.push(self.collection.workingCast.add(model));
@@ -218,9 +218,6 @@ app.SearchView = Backbone.View.extend({
 				return actorModel;
 			})
 
-			// console.log(castOverlap);
-			// console.log(castModels);
-
 			self.trigger('gotOverlap', castModels);
 
 			// destroy the castCollections
@@ -237,25 +234,32 @@ app.SearchView = Backbone.View.extend({
 	},
 	render: function(castOverlap){
 		var self = this;
+		var actorView; 
+		if (castOverlap){
+			_.each(castOverlap, function(actor){
+				var actorModel  = new app.Actor(actor);
+				actorModel.set({
+					'base_url': self.img.base_url,
+					'profile_size': self.img.profile_size
+				});
 
-		_.each(castOverlap, function(actor){
-			var actorModel  = new app.Actor(actor);
-			actorModel.set({
-				'base_url': self.img.base_url,
-				'profile_size': self.img.profile_size
+				// keep track of the actors with views in the workingCast collection
+				self.collection.workingCast.create(actorModel);
+
+				actorView = new app.ActorView({
+					model: actorModel
+				});
+			});
+		} else {
+			actorView = new app.ActorView({
+				model: new app.Actor()
 			});
 
-			// keep track of the actors with views in the workingCast collection
-			self.collection.workingCast.create(actorModel);
-
-			var actorView = new app.ActorView({
-				model: actorModel
-			});
-
-			actorView.listenTo(self.collection.workingCast, 'empty', actorView.deleteActor);
-
-			self.$el.append(actorView.render().el);
-		});
+		}
+		
+		actorView.listenTo(self.collection.workingCast, 'empty', actorView.deleteActor);
+		self.$el.append(actorView.render().el);
 		return this;
 	}
+	
 });
