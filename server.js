@@ -76,72 +76,72 @@ app.put('/api/config/:id', function(req, res){
 });
 
 // get all actors
-app.get('/api/actor', function(req, res){
-	return ActorModel.find(function(err, actors){
-		if (!err){
-			return res.send(actors)
-		} else {
-			return console.log(err);
-		}
-	})
-})
+// app.get('/api/actor', function(req, res){
+// 	return ActorModel.find(function(err, actors){
+// 		if (!err){
+// 			return res.send(actors)
+// 		} else {
+// 			return console.log(err);
+// 		}
+// 	})
+// })
 // insert a new actor
-app.post('/api/actor', function(req, res){
-	var actor = new ActorModel({
-		TMDBid: req.body.TMDBid,
-		name: req.body.name,
-		character: req.body.character,
-		img: req.body.img
-	});
+// app.post('/api/actor', function(req, res){
+// 	var actor = new ActorModel({
+// 		TMDBid: req.body.TMDBid,
+// 		name: req.body.name,
+// 		character: req.body.character,
+// 		img: req.body.img
+// 	});
 
-	return actor.save(function(err){
-		if (!err){
-			console.log("saved " + actor.name + " to the DB!");
-			return res.send(actor);
-		} else {
-			return console.log(err);
-		}
-	});
-});
+// 	return actor.save(function(err){
+// 		if (!err){
+// 			console.log("saved " + actor.name + " to the DB!");
+// 			return res.send(actor);
+// 		} else {
+// 			return console.log(err);
+// 		}
+// 	});
+// });
 
 // update an actor
-app.put('/api/actor/:id', function(req, res){
-	console.log('Updating actor ' + req.body.name);
-	return ActorModel.findById(req.body._id, function(err, actor){
-		if (!err){
-			actor.TMDBid = req.body.TMDBid,
-			actor.name = req.body.name,
-			actor.character = req.body.character,
-			actor.img = req.body.img
-		}
+// app.put('/api/actor/:id', function(req, res){
+// 	console.log('Updating actor ' + req.body.name);
+// 	return ActorModel.findById(req.body._id, function(err, actor){
+// 		if (!err){
+// 			actor.TMDBid = req.body.TMDBid,
+// 			actor.name = req.body.name,
+// 			actor.character = req.body.character,
+// 			actor.img = req.body.img
+// 		}
 
-		return actor.save(function(err){
-			if (!err){
-				return res.send(actor)
-			} else {
-				console.log(err);
-			}
+// 		return actor.save(function(err){
+// 			if (!err){
+// 				return res.send(actor)
+// 			} else {
+// 				console.log(err);
+// 			}
 
-			return res.send(actor);
-		});
-	})
-});
+// 			return res.send(actor);
+// 		});
+// 	})
+// });
 
 // delete an actor
-app.delete('/api/actor/:id', function(req, res){
-	console.log(req);
-	console.log('Deleting actor '+ req.params.name);
-	return ActorModel.findById(req.params.id, function(err, actor){
-		return actor.remove(function(err){
-			if (!err){
-				console.log('actor deleted');
-				return res.send('');
-			} else {
-				console.log(err);
-			}
-		})
-	})
-});
+// app.delete('/api/actor/:id', function(req, res){
+// 	console.log(req);
+// 	console.log('Deleting actor '+ req.params.name);
+// 	return ActorModel.findById(req.params.id, function(err, actor){
+// 		return actor.remove(function(err){
+// 			if (!err){
+// 				console.log('actor deleted');
+// 				return res.send('');
+// 			} else {
+// 				console.log(err);
+// 			}
+// 		})
+// 	})
+// });
 
 // update a movie
 // app.put('/api/media', function(req, res){

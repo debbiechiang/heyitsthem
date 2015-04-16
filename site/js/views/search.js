@@ -77,10 +77,11 @@ app.SearchView = Backbone.View.extend({
 		}, this);
 
 		// events
-		this.listenTo(this, "checkOverlap", this.getOverlap);
 		this.listenTo(this.collection.workingCast, "empty", this.removeAll);
+		this.listenTo(this, "checkOverlap", this.getOverlap);
 		this.listenTo(this, "gotOverlap", this.render);
-		this.listenTo(this, "noresults", this.render);
+		this.listenTo(this, "noResults", this.render);
+
 
 	}, 
 	events: {
@@ -122,8 +123,7 @@ app.SearchView = Backbone.View.extend({
 								self.collection.media[i] = model;
 								self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
 							} else {
-								console.log('No results found!');
-								self.trigger('noresults');
+								self.trigger('noResults');
 							}
 						}, 
 
@@ -189,7 +189,9 @@ app.SearchView = Backbone.View.extend({
 		});
 	},
 	getOverlap: function(castCollection){
-		var self = this;
+		var self = this; 
+
+
 		if (self.working.length === self.fields){
 			var castOverlap = [];
 			var castModels = [];
@@ -210,7 +212,7 @@ app.SearchView = Backbone.View.extend({
 						name: role.get('name'),
 						img: role.get('img'),
 						TMDBid: tmdbid,
-						character: memo.get('character') + ", " + role.get('character')
+						character: role.get('character') + ", " + memo.get('character')
 					}
 				});
 
@@ -249,16 +251,19 @@ app.SearchView = Backbone.View.extend({
 				actorView = new app.ActorView({
 					model: actorModel
 				});
+
+				actorView.listenTo(self.collection.workingCast, 'empty', actorView.deleteActor);
+				self.$el.append(actorView.render().el);
 			});
 		} else {
 			actorView = new app.ActorView({
 				model: new app.Actor()
 			});
 
+			actorView.listenTo(self.collection.workingCast, 'empty', actorView.deleteActor);
+			self.$el.append(actorView.render().el);
 		}
-		
-		actorView.listenTo(self.collection.workingCast, 'empty', actorView.deleteActor);
-		self.$el.append(actorView.render().el);
+
 		return this;
 	}
 	

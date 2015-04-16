@@ -4,5 +4,6 @@ var app = app || {};
 
 app.WorkingCast = Backbone.Collection.extend({
 	model: app.Actor, 
-	url: '/api/actor'
+	url: '/api/actor', 
+	localStorage: new Backbone.LocalStorage('whosthat-workingCast')
 });
