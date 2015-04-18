@@ -180,13 +180,14 @@ app.put('/api/config/:id', function(req, res){
 // })
 
 // start server 
-var port = 4711;
+var port = OPENSHIFT_MONGODB_DB_PORT;
 app.listen(port, function(){
 	console.log('Express server listening on port %d in %s mode', port, app.settings.env);
 });
 
 // connect to database
-mongoose.connect('mongodb://localhost/library_database');
+mongoose.connect(OPENSHIFT_MONGODB_DB_URL);
+// mongoose.connect('mongodb://localhost/library_database');
 
 // schemas
 // var Characters = new mongoose.Schema({
