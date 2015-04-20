@@ -30,6 +30,8 @@ app.configure( function(){
 
 });
 
+console.log(url);
+
 var connect = function(){
 	mongoose.connect(url);
 }
