@@ -69,6 +69,7 @@ app.get('/api/config', function(req, res){
 		if (!err){
 			return res.send(config);
 		} else {
+			console.log(err);
 			return console.log(err);
 		}
 	})

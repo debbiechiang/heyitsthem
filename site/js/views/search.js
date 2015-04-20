@@ -38,6 +38,14 @@ app.SearchView = Backbone.View.extend({
 			}, 
 			error: function(model){
 				console.log('fetch error!')
+				// get a new config obj anyway (?)
+				$.get("http://api.themoviedb.org/3/configuration?api_key=" + self.apikey)
+					.done(function(data){
+						self.img.base_url = data.images.base_url;
+						self.img.profile_size = data.images.profile_sizes[0];
+						model.set(data);	
+						model.save();
+					});
 			}
 		})
 
