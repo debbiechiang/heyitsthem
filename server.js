@@ -1,14 +1,21 @@
 // Module dependencies
 
-var express = require('express'), // web framework
+var application_root = __dirname,
+	express = require('express'), // web framework
 	bodyParser = require('body-parser'), // parser for reading request body
-	// path = require('path'), // utilities for dealing with filepaths
+	path = require('path'), // utilities for dealing with filepaths
 	mongoose = require('mongoose'); // mongodb integration
 
 // create server
 var app = express();
-var url = '127.0.0.1:27017/' + process.env.OPENSHIFT_APP_NAME;
-var port = process.env.PORT || 4711;
+
+app = express();  
+var port = process.env.OPENSHIFT_NODEJS_PORT ||  process.env.OPENSHIFT_INTERNAL_PORT || 4711;  
+var ipaddr = process.env.OPENSHIFT_NODEJS_IP || process.env.OPENSHIFT_INTERNAL_IP || 'localhost';  
+
+
+var url = 'mongodb://localhost/library_database';
+// var port = process.env.PORT || 4711;
 
 // if OPENSHIFT env variables are present, use the available connection info:
 if (process.env.OPENSHIFT_MONGODB_DB_URL) {
@@ -24,7 +31,7 @@ app.configure( function(){
 	// perform route lookup based on URL and HTTP method
 	app.use(app.router);
 	// where to serve static content
-	// app.use(express.static(path.join(application_root, 'site')));
+	app.use(express.static(path.join(application_root, 'site')));
 	// show all erros in development 
 	app.use(express.errorHandler({ dumpExceptions: true, showStack: true}));
 
@@ -47,7 +54,7 @@ db.on('error', function(error){
 db.on('disconnected', connect);
 
 // start server 
-app.listen(port, function(){
+app.listen(port, ipaddr, function(){
 	console.log('Express server listening on port %d in %s mode', port, app.settings.env);
 });
 
