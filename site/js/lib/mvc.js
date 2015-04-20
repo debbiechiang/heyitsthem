@@ -53,9 +53,10 @@ app.SearchView = Backbone.View.extend({
 
 		conf.fetch({
 			success: function(model){
+				console.log('fetch success');
 				// only get new configs if there is no record in DB, or if >1 week has passed.
 				if (typeof model.get('_id') === "undefined" || (new Date() -  new Date(model.get('date'))) > 604800000){
-				// get a new config object
+					// get a new config object
 					$.get("http://api.themoviedb.org/3/configuration?api_key=" + self.apikey)
 						.done(function(data){
 							self.img.base_url = data.images.base_url;
@@ -70,7 +71,7 @@ app.SearchView = Backbone.View.extend({
 				}
 			}, 
 			error: function(model){
-
+				console.log('fetch error!')
 			}
 		})
 
