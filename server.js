@@ -24,7 +24,7 @@ app.configure( function(){
 	// perform route lookup based on URL and HTTP method
 	app.use(app.router);
 	// where to serve static content
-	app.use(express.static(path.join(application_root, 'site')));
+	// app.use(express.static(path.join(application_root, 'site')));
 	// show all erros in development 
 	app.use(express.errorHandler({ dumpExceptions: true, showStack: true}));
 
