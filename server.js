@@ -1,13 +1,19 @@
 // Module dependencies
 
-var application_root = __dirname,
-	express = require('express'), // web framework
+var express = require('express'), // web framework
 	bodyParser = require('body-parser'), // parser for reading request body
-	path = require('path'), // utilities for dealing with filepaths
+	// path = require('path'), // utilities for dealing with filepaths
 	mongoose = require('mongoose'); // mongodb integration
 
 // create server
 var app = express();
+var url = '127.0.0.1:27017/' + process.env.OPENSHIFT_APP_NAME;
+var port = process.env.PORT || 4711;
+
+// if OPENSHIFT env variables are present, use the available connection info:
+if (process.env.OPENSHIFT_MONGODB_DB_URL) {
+	url = process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME;
+}
 
 // configure server
 app.configure( function(){
@@ -23,6 +29,29 @@ app.configure( function(){
 	app.use(express.errorHandler({ dumpExceptions: true, showStack: true}));
 
 });
+
+var connect = function(){
+	mongoose.connect(url);
+}
+
+connect();
+
+var db = mongoose.connection;
+
+db.on('error', function(error){
+	console.log('Error loading the db -- ' + error);
+});
+
+db.on('disconnected', connect);
+
+// start server 
+app.listen(port, function(){
+	console.log('Express server listening on port %d in %s mode', port, app.settings.env);
+});
+
+// connect to database
+// mongoose.connect(OPENSHIFT_MONGODB_DB_URL);
+// mongoose.connect('mongodb://localhost/library_database');
 
 // Routes
 // get the config object
@@ -75,124 +104,7 @@ app.put('/api/config/:id', function(req, res){
 	})
 });
 
-// get all actors
-// app.get('/api/actor', function(req, res){
-// 	return ActorModel.find(function(err, actors){
-// 		if (!err){
-// 			return res.send(actors)
-// 		} else {
-// 			return console.log(err);
-// 		}
-// 	})
-// })
-// insert a new actor
-// app.post('/api/actor', function(req, res){
-// 	var actor = new ActorModel({
-// 		TMDBid: req.body.TMDBid,
-// 		name: req.body.name,
-// 		character: req.body.character,
-// 		img: req.body.img
-// 	});
-
-// 	return actor.save(function(err){
-// 		if (!err){
-// 			console.log("saved " + actor.name + " to the DB!");
-// 			return res.send(actor);
-// 		} else {
-// 			return console.log(err);
-// 		}
-// 	});
-// });
-
-// update an actor
-// app.put('/api/actor/:id', function(req, res){
-// 	console.log('Updating actor ' + req.body.name);
-// 	return ActorModel.findById(req.body._id, function(err, actor){
-// 		if (!err){
-// 			actor.TMDBid = req.body.TMDBid,
-// 			actor.name = req.body.name,
-// 			actor.character = req.body.character,
-// 			actor.img = req.body.img
-// 		}
-
-// 		return actor.save(function(err){
-// 			if (!err){
-// 				return res.send(actor)
-// 			} else {
-// 				console.log(err);
-// 			}
-
-// 			return res.send(actor);
-// 		});
-// 	})
-// });
-
-// delete an actor
-// app.delete('/api/actor/:id', function(req, res){
-// 	console.log(req);
-// 	console.log('Deleting actor '+ req.params.name);
-// 	return ActorModel.findById(req.params.id, function(err, actor){
-// 		return actor.remove(function(err){
-// 			if (!err){
-// 				console.log('actor deleted');
-// 				return res.send('');
-// 			} else {
-// 				console.log(err);
-// 			}
-// 		})
-// 	})
-// });
-
-// update a movie
-// app.put('/api/media', function(req, res){
-// 	console.log('Updating movie ' + req.body.title);
-// 	console.log(req.body);
-// 	return MediaModel.findById(req.body._id, function(err, media){
-// 		if (!err){
-// 			media.title = req.body.title;
-// 			media.cast = req.body.cast;
-// 			media.TMDBid = +req.body.id;
-// 			media.popularity = req.body.popularity;
-// 			media.mediaType = req.body.mediaType;
-// 		}
-
-// 		return media.save(function(err){
-// 			if (!err) {
-// 				console.log('media updated');
-// 				console.log(media);
-// 				return res.send(media);
-// 			} else {
-// 				console.log(err);
-// 			}
-// 			return res.send(media);
-// 		});
-// 	});
-// });
-// get a single movie by id
-// app.get('/api/media/:id', function(req, res){
-// 	return MediaModel.find({ TMDBid: req.params.TMDBid}, function(err, media){
-// 		if (!err){
-// 			return res.send(media);
-// 		} else {
-// 			return console.log(err);
-// 		}
-// 	})
-// })
-
-// start server 
-var port = OPENSHIFT_MONGODB_DB_PORT;
-app.listen(port, function(){
-	console.log('Express server listening on port %d in %s mode', port, app.settings.env);
-});
-
-// connect to database
-mongoose.connect(OPENSHIFT_MONGODB_DB_URL);
-// mongoose.connect('mongodb://localhost/library_database');
-
 // schemas
-// var Characters = new mongoose.Schema({
-// 	characters: String
-// });
 var Actors = new mongoose.Schema({
 	TMDBid: Number,
 	name: String, 
@@ -207,15 +119,8 @@ var Config = new mongoose.Schema({
 	id: Number
 })
 
-// var Media = new mongoose.Schema({
-// 	title: String,
-// 	TMDBid: String,
-// 	popularity: Number,
-// 	mediaType: String,
-// 	cast: [ Actors ]
-// });
 // Models
 var ActorModel = mongoose.model('Actor', Actors);
 var ConfigModel = mongoose.model('Config', Config);
-// var MediaModel = mongoose.model('Media', Media);
+
 
