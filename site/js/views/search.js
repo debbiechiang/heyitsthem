@@ -19,7 +19,6 @@ app.SearchView = Backbone.View.extend({
 
 		conf.fetch({
 			success: function(model){
-				console.log('fetch success');
 				// only get new configs if there is no record in DB, or if >1 week has passed.
 				if (typeof model.get('_id') === "undefined" || (new Date() -  new Date(model.get('date'))) > 604800000){
 					// get a new config object
@@ -37,7 +36,6 @@ app.SearchView = Backbone.View.extend({
 				}
 			}, 
 			error: function(model){
-				console.log('fetch error!')
 				// get a new config obj anyway (?)
 				$.get("http://api.themoviedb.org/3/configuration?api_key=" + self.apikey)
 					.done(function(data){
@@ -118,7 +116,7 @@ app.SearchView = Backbone.View.extend({
 				if (typeof self.collection.media[i] != "undefined"){
 					// the movie has been autocompleted and you can trust that this is the right 
 					// media title. Init a cast search on it. 
-
+					console.log('Searching for '+ self.collection.media[i].title + ', ' + self.collection.media[i].TMDBid);
 					self.getCastList(i, self.collection.media[i].mediaType, self.collection.media[i].TMDBid);
 				} else {
 					// this didn't autocomplete so you need to init a new search for it.
@@ -168,6 +166,8 @@ app.SearchView = Backbone.View.extend({
 		var self = this; 
 
 		var i = dataset.slice(4);
+
+		console.log(suggestion, i);
 
 		self.collection.media[i] = suggestion;
 	},
@@ -221,7 +221,7 @@ app.SearchView = Backbone.View.extend({
 						name: role.get('name'),
 						img: role.get('img'),
 						TMDBid: tmdbid,
-						character: role.get('character') + ", " + memo.get('character')
+						character: memo.get('character') + ', ' + role.get('character')
 					}
 				});
 
