@@ -6,8 +6,7 @@ app.Movie = Backbone.Model.extend({
 	url: '/api/media',
 	defaults: {
 		title: 'unknown',
-		TMDBid: null,
-		cast: []
+		TMDBid: null
 	},
 	parse: function( response ) {
 	    response.id = response.TMDBid;
