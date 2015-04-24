@@ -4,8 +4,8 @@
 var app = app || {};
 
 $(function(){
-	imdb = new app.SearchView();
-	queries = new app.FormView();
+	app.tmdb = new app.SearchView();
+	app.queries = new app.FormView();
 })
 // /models/actor.js
 
@@ -233,6 +233,7 @@ app.FormView = Backbone.View.extend({
 		var itemView = new app.QueryView({
 			model: query
 		});
+		
 		this.$el.append( itemView.render().el );
 	},
 	updateQuery: function(){
@@ -256,8 +257,23 @@ var app = app || {};
 app.QueryView = Backbone.View.extend({
 	template: _.template($('#formTemplate').html()),
 	render: function(){
-		console.log(this.model);
-		this.$el.html(this.template({mod: this.model}));
+		var i = this.model.collection.indexOf(this.model);
+
+		this.$el.html(this.template({mod: this.model})); 
+		this.$('input').typeahead({
+			minLength: 2,
+			highlight:true
+		}, {
+			name: "tmdb" + i,
+			source: _.throttle(_.bind(app.tmdb.getSuggestion, app.tmdb), 300, {leading: false}),
+			displayKey: "title",
+			templates: {
+				"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %> (<%= date %>)</p>")
+			}
+		});
+		if (typeof app.tmdb.collection.cast[i] === "undefined"){
+				app.tmdb.collection.cast.push(new app.Cast());
+		} 
 		return this;
 	}
 	
@@ -325,27 +341,6 @@ app.SearchView = Backbone.View.extend({
 				_.invoke(collection.toArray(), "destroy");
 			}
 		});
-
-		// loop through the inputs and: 
-		// _.each(this.$("input"), function(el, i){
-		// 	// create a Cast collection for each input 
-		// 	if (typeof self.collection.cast[i] === "undefined"){
-		// 		self.collection.cast.push(new app.Cast());
-		// 	} 
-			
-		// 	// init typeahead to get suggestions for correct media properties. 
-		// 	$(el).typeahead({
-		// 		minLength: 2,
-		// 		highlight:true
-		// 	}, {
-		// 		name: "tmdb" + i,
-		// 		source: _.throttle(_.bind(self.getSuggestion, this), 300, {leading: false}),
-		// 		displayKey: "title",
-		// 		templates: {
-		// 			"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %> (<%= date %>)</p>")
-		// 		}
-		// 	});
-		// }, this);
 
 		// events
 		this.listenTo(this.collection.workingCast, "empty", this.removeAll);
