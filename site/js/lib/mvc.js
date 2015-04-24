@@ -5,7 +5,173 @@ var app = app || {};
 
 $(function(){
 	imdb = new app.SearchView();
+	queries = new app.FormView();
 })
+// /models/actor.js
+
+var app = app || {};
+
+app.Actor = Backbone.Model.extend({
+	defaults: {
+		character : "No overlap found",
+		TMDBid: null,
+		name: "",
+		img: ""
+	},
+	parse: function( response ) {
+	    return response;
+	}
+})
+// /site/js/model/config.js
+
+var app = app || {};
+
+app.Config = Backbone.Model.extend({
+	urlRoot: '/api/config', 
+	parse: function(response){
+		response.id = response._id;
+		return response;
+	}
+});
+// site/js/models/formModel.js
+
+var app = app || {};
+
+app.FormModel = Backbone.Model.extend({
+	defaults: {
+		query: 'something'
+	}
+});
+// site/js/models/movie.js
+
+var app = app || {};
+
+app.Movie = Backbone.Model.extend({
+	url: '/api/media',
+	defaults: {
+		title: 'unknown',
+		TMDBid: null
+	},
+	parse: function( response ) {
+	    response.id = response.TMDBid;
+	    return response;
+	}
+});
+// /models/actor.js
+
+var app = app || {};
+
+app.Cast = Backbone.Collection.extend({
+	model: app.Actor,
+	url: function(){ 
+		if (this.mediaType === "movie"){
+			return 'http://api.themoviedb.org/3/' + this.mediaType + '/' + this.TMDBid + '/credits' 
+		} else {
+			return 'http://api.themoviedb.org/3/tv/' + this.TMDBid + '/season/' + this.season + '/credits'
+		}
+	},
+	sync: function(method, model, options){
+		options.timeout = 10000;
+		options.data = {
+			api_key: "3ad868d8cde55463944788618a489c37"
+		};
+		return Backbone.sync(method, model, options);
+	},
+	parse: function(response){
+		if (response.cast){
+			var parsed = [];
+			for (var i = 0; i < response.cast.length; i++){
+				var actorObj = {
+					character : response.cast[i].character,
+					TMDBid: response.cast[i].id,
+					name: response.cast[i].name, 
+					img: response.cast[i].profile_path
+				}
+				parsed.push(actorObj);
+			}
+			// console.log(parsed);
+			return parsed;
+		} 
+	}
+})
+// site/js/collections/dbMovie.js
+
+var app = app || {};
+
+app.DBMovieCollection = Backbone.Collection.extend({
+	model: app.Movie, 
+	url: '/api/media'
+});
+// site/js/collections/formCollection.js
+
+var app = app || {};
+
+app.FormCollection = Backbone.Collection.extend({
+	model: app.FormModel,
+	localStorage: new Backbone.LocalStorage('whosthat-formCollection'),
+	initialize: function(){
+		// this.create({ query: 'She\'s All That' });
+		// this.create({ query: 'Furious 7' });
+	}
+});
+
+
+// site/js/collections/movie.js
+
+var app = app || {};
+
+app.MovieCollection = Backbone.Collection.extend({
+	model: app.Movie, 
+	url: function(){ return 'http://api.themoviedb.org/3/search/multi?query=' + encodeURI(this.movieTitle).replace(/%20/g, "+")},
+	sync: function(method, model, options){
+		options.timeout = 10000;
+		options.data = {
+			page: 1, 
+			api_key: "3ad868d8cde55463944788618a489c37"
+		};
+		return Backbone.sync(method, model, options);
+	},
+	parse: function(response){
+		// console.log('response is: ')
+		// console.log(response);
+
+		if (response.results){
+			var parsed = [];
+			for (var i = 0; i < response.results.length; i++){
+				// limit popularity and also restrict multi-search results to 
+				// TV shows and movies
+				if (response.results[i].media_type === "movie" || response.results[i].media_type === "tv"){
+					var med = response.results[i];
+
+					var mediaObj = {
+						title: (med.media_type === "movie") ? med.title : med.name,
+						date: (med.media_type === "movie") ? new Date(med.release_date).getFullYear() : new Date(med.first_air_date).getFullYear(),
+						popularity: med.popularity,
+						TMDBid: med.id,
+						mediaType: med.media_type,
+						poster: med.poster_path 
+					}
+					parsed.push(mediaObj);
+				}
+			}
+			// sort by popularity and return the top 5 results
+			// underscore is great
+			return _.chain(parsed).sortBy(function(parsed){return parsed.popularity}).reverse().first(5).value();
+		} else {
+			console.log("TMDB has no record of that title!");
+		}
+
+	}
+});
+// site/js/collections/workingMovie.js
+
+var app = app || {};
+
+app.WorkingCast = Backbone.Collection.extend({
+	model: app.Actor, 
+	url: '/api/actor', 
+	localStorage: new Backbone.LocalStorage('whosthat-workingCast')
+});
 // views/actor.js
 
 var app = app || {};
@@ -35,23 +201,66 @@ app.ActorView = Backbone.View.extend({
 var app = app || {};
 
 app.FormView = Backbone.View.extend({
-	el: "input.media",
-	model: app.FormModel,
-	template: _.template($('#formTemplate').html()),
+	el: "#searchMedia div",
+	// template: _.template($('#formTemplate').html()),
 	events: {
 		'blur input.tt-media': 'updateQuery'
 	},
 	initialize: function(){
-		this.listenTo(this.model, 'change', this.render);
+
+		var searches = [{
+			query: 'She\'s All That'
+		}, {
+			query: 'Furious 7'
+		}]
+
+		this.collection = new app.FormCollection(searches);
+
+		this.render();
+
+
+		// this.listenTo(this.model, 'change', this.render);
+		// this.listenTo(this.collection, 'all', this.addAll);
 	}, 
 	render: function(){
-		this.$el.html(this.template(this.model.attributes));
-		return this;
+		// console.log(this.collection);
+		this.collection.each(function(query){
+			this.renderQuery(query);
+		}, this);
+
 	}, 
+	renderQuery: function(query){
+		var itemView = new app.QueryView({
+			model: query
+		});
+		this.$el.append( itemView.render().el );
+	},
 	updateQuery: function(){
-		var self = this;
-		self.render();
+		this.render();
+	}, 
+	addAll: function(){
+		console.log(this.collection);
+		this.collection.each(this.addOne, this);
+	},
+	addOne: function(query){
+		console.log(query);
+		var view = new FormView({ model: query});
+		$('#searchMedia').append(view.render().el);
 	}
+});
+
+// sites/js/views/queryView
+
+var app = app || {}; 
+
+app.QueryView = Backbone.View.extend({
+	template: _.template($('#formTemplate').html()),
+	render: function(){
+		console.log(this.model);
+		this.$el.html(this.template({mod: this.model}));
+		return this;
+	}
+	
 });
 // sites/js/views/search.js
 
@@ -118,25 +327,25 @@ app.SearchView = Backbone.View.extend({
 		});
 
 		// loop through the inputs and: 
-		_.each(this.$("input"), function(el, i){
-			// create a Cast collection for each input 
-			if (typeof self.collection.cast[i] === "undefined"){
-				self.collection.cast.push(new app.Cast());
-			} 
+		// _.each(this.$("input"), function(el, i){
+		// 	// create a Cast collection for each input 
+		// 	if (typeof self.collection.cast[i] === "undefined"){
+		// 		self.collection.cast.push(new app.Cast());
+		// 	} 
 			
-			// init typeahead to get suggestions for correct media properties. 
-			$(el).typeahead({
-				minLength: 2,
-				highlight:true
-			}, {
-				name: "tmdb" + i,
-				source: _.throttle(_.bind(self.getSuggestion, this), 300, {leading: false}),
-				displayKey: "title",
-				templates: {
-					"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %> (<%= date %>)</p>")
-				}
-			});
-		}, this);
+		// 	// init typeahead to get suggestions for correct media properties. 
+		// 	$(el).typeahead({
+		// 		minLength: 2,
+		// 		highlight:true
+		// 	}, {
+		// 		name: "tmdb" + i,
+		// 		source: _.throttle(_.bind(self.getSuggestion, this), 300, {leading: false}),
+		// 		displayKey: "title",
+		// 		templates: {
+		// 			"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %> (<%= date %>)</p>")
+		// 		}
+		// 	});
+		// }, this);
 
 		// events
 		this.listenTo(this.collection.workingCast, "empty", this.removeAll);
@@ -390,156 +599,4 @@ app.SearchView = Backbone.View.extend({
 		return this;
 	}
 	
-});
-
-// /models/actor.js
-
-var app = app || {};
-
-app.Actor = Backbone.Model.extend({
-	defaults: {
-		character : "No overlap found",
-		TMDBid: null,
-		name: "",
-		img: ""
-	},
-	parse: function( response ) {
-	    return response;
-	}
-})
-// /site/js/model/config.js
-
-var app = app || {};
-
-app.Config = Backbone.Model.extend({
-	urlRoot: '/api/config', 
-	parse: function(response){
-		response.id = response._id;
-		return response;
-	}
-});
-// site/js/models/formModel.js
-
-var app = app || {};
-
-app.FormModel = Backbone.Model.extend({
-	defaults: {
-		query: ''
-	}
-});
-// site/js/models/movie.js
-
-var app = app || {};
-
-app.Movie = Backbone.Model.extend({
-	url: '/api/media',
-	defaults: {
-		title: 'unknown',
-		TMDBid: null
-	},
-	parse: function( response ) {
-	    response.id = response.TMDBid;
-	    return response;
-	}
-});
-// /models/actor.js
-
-var app = app || {};
-
-app.Cast = Backbone.Collection.extend({
-	model: app.Actor,
-	url: function(){ 
-		if (this.mediaType === "movie"){
-			return 'http://api.themoviedb.org/3/' + this.mediaType + '/' + this.TMDBid + '/credits' 
-		} else {
-			return 'http://api.themoviedb.org/3/tv/' + this.TMDBid + '/season/' + this.season + '/credits'
-		}
-	},
-	sync: function(method, model, options){
-		options.timeout = 10000;
-		options.data = {
-			api_key: "3ad868d8cde55463944788618a489c37"
-		};
-		return Backbone.sync(method, model, options);
-	},
-	parse: function(response){
-		if (response.cast){
-			var parsed = [];
-			for (var i = 0; i < response.cast.length; i++){
-				var actorObj = {
-					character : response.cast[i].character,
-					TMDBid: response.cast[i].id,
-					name: response.cast[i].name, 
-					img: response.cast[i].profile_path
-				}
-				parsed.push(actorObj);
-			}
-			// console.log(parsed);
-			return parsed;
-		} 
-	}
-})
-// site/js/collections/dbMovie.js
-
-var app = app || {};
-
-app.DBMovieCollection = Backbone.Collection.extend({
-	model: app.Movie, 
-	url: '/api/media'
-});
-// site/js/collections/movie.js
-
-var app = app || {};
-
-app.MovieCollection = Backbone.Collection.extend({
-	model: app.Movie, 
-	url: function(){ return 'http://api.themoviedb.org/3/search/multi?query=' + encodeURI(this.movieTitle).replace(/%20/g, "+")},
-	sync: function(method, model, options){
-		options.timeout = 10000;
-		options.data = {
-			page: 1, 
-			api_key: "3ad868d8cde55463944788618a489c37"
-		};
-		return Backbone.sync(method, model, options);
-	},
-	parse: function(response){
-		// console.log('response is: ')
-		// console.log(response);
-
-		if (response.results){
-			var parsed = [];
-			for (var i = 0; i < response.results.length; i++){
-				// limit popularity and also restrict multi-search results to 
-				// TV shows and movies
-				if (response.results[i].media_type === "movie" || response.results[i].media_type === "tv"){
-					var med = response.results[i];
-
-					var mediaObj = {
-						title: (med.media_type === "movie") ? med.title : med.name,
-						date: (med.media_type === "movie") ? new Date(med.release_date).getFullYear() : new Date(med.first_air_date).getFullYear(),
-						popularity: med.popularity,
-						TMDBid: med.id,
-						mediaType: med.media_type,
-						poster: med.poster_path 
-					}
-					parsed.push(mediaObj);
-				}
-			}
-			// sort by popularity and return the top 5 results
-			// underscore is great
-			return _.chain(parsed).sortBy(function(parsed){return parsed.popularity}).reverse().first(5).value();
-		} else {
-			console.log("TMDB has no record of that title!");
-		}
-
-	}
-});
-// site/js/collections/workingMovie.js
-
-var app = app || {};
-
-app.WorkingCast = Backbone.Collection.extend({
-	model: app.Actor, 
-	url: '/api/actor', 
-	localStorage: new Backbone.LocalStorage('whosthat-workingCast')
 });

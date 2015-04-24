@@ -63,25 +63,25 @@ app.SearchView = Backbone.View.extend({
 		});
 
 		// loop through the inputs and: 
-		_.each(this.$("input"), function(el, i){
-			// create a Cast collection for each input 
-			if (typeof self.collection.cast[i] === "undefined"){
-				self.collection.cast.push(new app.Cast());
-			} 
+		// _.each(this.$("input"), function(el, i){
+		// 	// create a Cast collection for each input 
+		// 	if (typeof self.collection.cast[i] === "undefined"){
+		// 		self.collection.cast.push(new app.Cast());
+		// 	} 
 			
-			// init typeahead to get suggestions for correct media properties. 
-			$(el).typeahead({
-				minLength: 2,
-				highlight:true
-			}, {
-				name: "tmdb" + i,
-				source: _.throttle(_.bind(self.getSuggestion, this), 300, {leading: false}),
-				displayKey: "title",
-				templates: {
-					"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %> (<%= date %>)</p>")
-				}
-			});
-		}, this);
+		// 	// init typeahead to get suggestions for correct media properties. 
+		// 	$(el).typeahead({
+		// 		minLength: 2,
+		// 		highlight:true
+		// 	}, {
+		// 		name: "tmdb" + i,
+		// 		source: _.throttle(_.bind(self.getSuggestion, this), 300, {leading: false}),
+		// 		displayKey: "title",
+		// 		templates: {
+		// 			"suggestion": _.template("<p><i class='<%= mediaType %>' /><%= title %> (<%= date %>)</p>")
+		// 		}
+		// 	});
+		// }, this);
 
 		// events
 		this.listenTo(this.collection.workingCast, "empty", this.removeAll);

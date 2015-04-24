@@ -6,20 +6,20 @@
         <link rel="stylesheet" href="css/styles.css">
     </head>
     <body>
-    <script id="mediaTemplate" type="text/template">
-     
-
-    </script>
-    <script id="actorTemplate" type="text/template">
-        <% if (img) { %> <img src="<%= base_url %><%= profile_size %><%= img %>" alt="<%= name %>" /> <% } %><%= name %> | <%= character %>
-    </script>
+        <script id="formTemplate" type="text/template">
+            <input class="media" type="text" placeholder="Movie or TV show" value="<%= mod.attributes.query %>"/>
+            <% if (mod.collection.indexOf(mod) != (mod.collection.length - 1)) { %>
+                <p>and</p>
+            <% } %>
+        </script>
+        <script id="actorTemplate" type="text/template">
+            <% if (img) { %> <img src="<%= base_url %><%= profile_size %><%= img %>" alt="<%= name %>" /> <% } %><%= name %> | <%= character %>
+        </script>
         <div id="media">
             <form id="searchMedia" action="#">
+                <p>Hey, I saw them in</p>
                 <div>
-                    <p>Hey, I saw them in</p>
-                    <input class="media" type="text" placeholder="Movie or TV show" value="She's All That"/>
-                    <p>and</p>
-                    <input class="media" type="text" placeholder="Movie or TV show" value="Furious 7"/>
+                
                 </div>
                     <button id="search">Search</button>
             </form>

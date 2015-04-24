@@ -12,7 +12,7 @@ module.exports = function(grunt){
 		}, 
 		concat: {
 			all: {
-				src: ['site/js/app.js', 'site/js/views/*', 'site/js/models/*', 'site/js/collections/*'],
+				src: ['site/js/app.js', 'site/js/models/*', 'site/js/collections/*', 'site/js/views/*'],
 				dest: 'site/js/lib/mvc.js'
 			}
 		},
@@ -27,7 +27,7 @@ module.exports = function(grunt){
 		},
 		watch: {
 			all: {
-				files : ['site/js/app.js', 'site/js/views/*', 'site/js/models/*', 'site/js/collections/*'],
+				files : ['site/js/app.js', 'site/js/models/*', 'site/js/collections/*', 'site/js/views/*'],
 				tasks: 'concat:all'
 			}
 		}
