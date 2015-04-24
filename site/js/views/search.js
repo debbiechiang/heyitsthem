@@ -105,7 +105,7 @@ app.SearchView = Backbone.View.extend({
 
 		// reset workingCast
 		self.working = [];
-		self.collection.media = [];
+		// self.collection.media = [];
 		self.collection.workingCast.trigger("empty");
 		self.collection.workingCast.reset();
 
@@ -116,7 +116,7 @@ app.SearchView = Backbone.View.extend({
 				if (typeof self.collection.media[i] != "undefined"){
 					// the movie has been autocompleted and you can trust that this is the right 
 					// media title. Init a cast search on it. 
-					console.log('Searching for '+ self.collection.media[i].title + ', ' + self.collection.media[i].TMDBid);
+					// console.log('Searching for '+ self.collection.media[i].title + ', ' + self.collection.media[i].TMDBid);
 					self.getCastList(i, self.collection.media[i].mediaType, self.collection.media[i].TMDBid);
 				} else {
 					// this didn't autocomplete so you need to init a new search for it.
@@ -167,14 +167,17 @@ app.SearchView = Backbone.View.extend({
 
 		var i = dataset.slice(4);
 
-		console.log(suggestion, i);
+		// console.log(suggestion, i);
 
 		self.collection.media[i] = suggestion;
+
+		console.log(self.collection.media);
 	},
 	getCastList: function(i, mediaType, TMDBid){
 		var self = this;
-		// use the appropriate cast collection
 		var cast = self.collection.cast[i];
+		// use the appropriate cast collection
+		// var cast = self.collection.cast[i];
 
 		// get the media type 
 		cast.mediaType = mediaType;
@@ -184,22 +187,78 @@ app.SearchView = Backbone.View.extend({
 		cast.TMDBid = TMDBid;
 
 		// console.log("cast", cast);
+		if (cast.mediaType === "movie"){
+			cast.fetch({
+				success: function(collection, response, options){
+					self.working.push(collection);
+					self.trigger('checkOverlap', cast);
+					// self.working.push(self.collection.workingCast.add(model));
 
-		cast.fetch({
-			success: function(collection, response, options){
-				self.working.push(collection);
-				self.trigger('checkOverlap', cast);
-				// self.working.push(self.collection.workingCast.add(model));
+				},
+				error: function(collection, response, options){
+					console.log("there was an error");
+				}
+			});
+		} else {
+			// it's TV and you need to iterate through the cast list per season
+			// thanks TMDB
 
-			},
-			error: function(collection, response, options){
-				console.log("there was an error");
-			}
-		});
+			var seasons; 
+			var promises = [];
+			var fullCast; 
+			// send request to get the number of seasons
+			$.get('http://api.themoviedb.org/3/tv/' + TMDBid, {api_key: "3ad868d8cde55463944788618a489c37"}, function(data, textStatus, jqXHR){
+				console.log(data);
+				seasons = data.number_of_seasons;
+			}).then(function(){
+				_.times(seasons, function(n){
+					cast.season = n+1;
+
+					// var url = 'http://api.themoviedb.org/3/tv/' + TMDBid + '/season/' + (n+1) + '/credits?api_key=3ad868d8cde55463944788618a489c37';
+					// console.log(url);
+					var p = cast.fetch({
+						success: function(collection, response, options){
+							// console.log(collection);
+							if (!fullCast){
+								fullCast = collection.clone(); 
+							} else {
+								while(collection.length > 0) {
+									var entry = collection.pop();
+									if (fullCast.where({TMDBid : entry.get('TMDBid')}).length === 0){
+										fullCast.add(entry);
+									}
+								}
+							};
+						},
+						error: function(collection, response, options){
+
+						}
+
+					});
+
+					promises.push(p);
+				});
+
+				$.when.apply($, promises).done(function(){
+					// console.log(cast, fullCast);
+					self.working.push(fullCast);
+					self.trigger('checkOverlap', fullCast);
+				});
+			});
+
+
+			
+
+			// send requests for each season
+			// _.each(seasons, function(el, i, list){
+			// 	$.get('http://api.themoviedb.org/3/tv/' + TMDBid + '/season/' + i + '/credits', {api_key: "3ad868d8cde55463944788618a489c37"}, function(data, textStatus, jqXHR){
+			// 		console.log(' cast for season ' + i , data.cast);
+			// 	});
+			// });
+		}
 	},
 	getOverlap: function(castCollection){
 		var self = this; 
-
 
 		if (self.working.length === self.fields){
 			var castOverlap = [];

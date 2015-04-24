@@ -4,7 +4,13 @@ var app = app || {};
 
 app.Cast = Backbone.Collection.extend({
 	model: app.Actor,
-	url: function(){ return 'http://api.themoviedb.org/3/' + this.mediaType + '/' + this.TMDBid + '/credits' },
+	url: function(){ 
+		if (this.mediaType === "movie"){
+			return 'http://api.themoviedb.org/3/' + this.mediaType + '/' + this.TMDBid + '/credits' 
+		} else {
+			return 'http://api.themoviedb.org/3/tv/' + this.TMDBid + '/season/' + this.season + '/credits'
+		}
+	},
 	sync: function(method, model, options){
 		options.timeout = 10000;
 		options.data = {
