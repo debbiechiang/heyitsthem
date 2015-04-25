@@ -7,7 +7,7 @@ app.ActorView = Backbone.View.extend({
 	template: _.template( $('#actorTemplate').html() ),
 	initialize: function(){
 		this.model.on('destroy', function(){
-			console.log('DESTROYED!');
+			console.log('DESTROYED!' + this.model.get('name'));
 		}, this)
 	},
 	deleteActor: function(){
