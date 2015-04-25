@@ -113,6 +113,7 @@ app.FormCollection = Backbone.Collection.extend({
 	initialize: function(){
 		this.fetch();
 		if (this.size() === 0){
+			// default to 2 inputs
 			this.create();
 			this.create();
 		}
@@ -262,7 +263,6 @@ app.QueryView = Backbone.View.extend({
 		var newQuery = self.$('.tt-input').val().trim();
 
 		if (newQuery){
-			console.log(newQuery);
 			self.model.set({ query: newQuery});
 			// as of now, the model .hasChange() d. 
 			app.tmdb.collection.media[self.model.collection.indexOf(self.model)] = undefined;
@@ -449,7 +449,7 @@ app.SearchView = Backbone.View.extend({
 
 		self.collection.media[i] = new app.Movie(suggestion);
 
-		console.log(self.collection.media);
+
 	},
 	getCastList: function(i, mediaType, TMDBid){
 		var self = this;
@@ -486,7 +486,7 @@ app.SearchView = Backbone.View.extend({
 			var fullCast; 
 			// send request to get the number of seasons
 			$.get("http://api.themoviedb.org/3/tv/" + TMDBid, {api_key: "3ad868d8cde55463944788618a489c37"}, function(data, textStatus, jqXHR){
-				console.log(data);
+
 				seasons = data.number_of_seasons;
 			}).then(function(){
 				_.times(seasons, function(n){
