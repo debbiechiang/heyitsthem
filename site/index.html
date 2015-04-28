@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Hey, It's Them!</title>
  <!--         <link href='http://fonts.googleapis.com/css?family=Neuton:400,700,800' rel='stylesheet' type='text/css'> -->
-         <link href='http://fonts.googleapis.com/css?family=Raleway:100,400,800' rel='stylesheet' type='text/css'>
+         <link href='http://fonts.googleapis.com/css?family=Raleway:100,400,600' rel='stylesheet' type='text/css'>
          <link href='http://fonts.googleapis.com/css?family=Lato:100' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" href="css/styles.css">
     </head>
@@ -17,7 +17,8 @@
             <% } %></p>
         </script>
         <script id="actorTemplate" type="text/template">
-            <% if (img) { %> <img src="<%= base_url %><%= profile_size %><%= img %>" alt="<%= name %>" /> <% } %><%= name %> | <%= character %>
+            <% if (img) { %> <img src="<%= base_url %><%= profile_size %><%= img %>" alt="<%= name %>" class="headShot"/> <% } %>
+                <div class="info"><span class="name"><%= name %></span> <span class="characters"><%= character %></span></div>
         </script>
         <div id="media">
             <header>
@@ -29,8 +30,11 @@
                     <div class="queries">
                     
                     </div>
-                    <button id="search">Search</button>
+                    <button id="search">who <span class="emph">are</span> they?</button>
+
+                    <ul id="actors"></ul>
                 </form>
+
 
             </div>
             <footer>

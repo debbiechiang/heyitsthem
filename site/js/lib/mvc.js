@@ -319,14 +319,14 @@ app.SearchView = Backbone.View.extend({
 					$.get("http://api.themoviedb.org/3/configuration?api_key=" + self.apikey)
 						.done(function(data){
 							self.img.base_url = data.images.base_url;
-							self.img.profile_size = data.images.profile_sizes[0];
+							self.img.profile_size = data.images.profile_sizes[1];
 							model.set(data);	
 							model.save();
 						});
 				} else {
 					// there is a valid config object in the db.
 					self.img.base_url = model.get("images").base_url;
-					self.img.profile_size = model.get("images").profile_sizes[0];
+					self.img.profile_size = model.get("images").profile_sizes[1];
 				}
 			}, 
 			error: function(model){
@@ -334,7 +334,7 @@ app.SearchView = Backbone.View.extend({
 				$.get("http://api.themoviedb.org/3/configuration?api_key=" + self.apikey)
 					.done(function(data){
 						self.img.base_url = data.images.base_url;
-						self.img.profile_size = data.images.profile_sizes[0];
+						self.img.profile_size = data.images.profile_sizes[1];
 						model.set(data);	
 						model.save();
 					});
@@ -596,7 +596,7 @@ app.SearchView = Backbone.View.extend({
 				});
 
 				actorView.listenTo(self.collection.workingCast, "empty", actorView.deleteActor);
-				self.$el.append(actorView.render().el);
+				self.$('#actors').append(actorView.render().el);
 			});
 		} else {
 			actorView = new app.ActorView({
@@ -604,7 +604,7 @@ app.SearchView = Backbone.View.extend({
 			});
 
 			actorView.listenTo(self.collection.workingCast, "empty", actorView.deleteActor);
-			self.$el.append(actorView.render().el);
+			self.$('#actors').append(actorView.render().el);
 		}
 
 		return this;
