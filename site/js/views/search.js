@@ -3,7 +3,7 @@
 var app = app || {};
 
 app.SearchView = Backbone.View.extend({
-	el: "#media", 
+	el: "#searchMedia", 
 	apikey: "3ad868d8cde55463944788618a489c37",
 	img: {
 		"base_url": "",

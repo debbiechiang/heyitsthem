@@ -1,4 +1,4 @@
-// /models/actor.js
+// /collections/cast.js
 
 var app = app || {};
 

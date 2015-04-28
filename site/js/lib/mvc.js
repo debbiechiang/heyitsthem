@@ -58,7 +58,7 @@ app.Movie = Backbone.Model.extend({
 	    return response;
 	}
 });
-// /models/actor.js
+// /collections/cast.js
 
 var app = app || {};
 
@@ -185,9 +185,6 @@ app.ActorView = Backbone.View.extend({
 	tagName: 'li',
 	template: _.template( $('#actorTemplate').html() ),
 	initialize: function(){
-		this.model.on('destroy', function(){
-			console.log('DESTROYED!' + this.model.get('name'));
-		}, this)
 	},
 	deleteActor: function(){
 		// delete model
@@ -300,7 +297,7 @@ app.QueryView = Backbone.View.extend({
 var app = app || {};
 
 app.SearchView = Backbone.View.extend({
-	el: "#media", 
+	el: "#searchMedia", 
 	apikey: "3ad868d8cde55463944788618a489c37",
 	img: {
 		"base_url": "",
