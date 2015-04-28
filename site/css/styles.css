@@ -24,47 +24,38 @@ h1 {
     margin: 0;
     font-weight: 100;
     font-size: 3em;
+    line-height: 1.8em;em;
     text-align: center; 
     vertical-align: top;
+    display: inline-block;
 }
 .boom{
     font-size: 3.5em;
     font-weight: 400;
     display: block;
+    border-bottom: 2px solid #ccc;
+    line-height: 1em;
 }
 .amp{
     font-family: 'Lato', 'Raleway', sans-serif;
     font-size: 1.4em;
 }
 header {
-    padding: 1.34em 0;
-}
-
-#searchMedia {
-    margin: 0 auto;
-    padding: 2em 0;
+    padding: 1.34em 0 0;
 }
 footer {
     height: 10%;
 }
 
-.melma {
-    font-family: 'Melma';
-    font-weight: 400;
-    display: inline-block;
-    font-size: 1.5em;
-    vertical-align: bottom;
-}
-.melma.left {
-    transform: rotate(7deg);
-}
-.melma.right {
-    transform: rotate(-9deg);
-}
 input {
     color: #fff;
     background-color: #113348;
 }
+#searchMedia {
+    margin: 0 auto;
+    padding: 2em 0;
+}
+
 .tt-input, 
 .tt-hint {
     width: 13em;
@@ -113,4 +104,19 @@ input {
 
 .tt-suggestion p {
     margin: 0;
+}
+
+
+.melma {
+    font-family: 'Melma';
+    font-weight: 400;
+    display: inline-block;
+    font-size: 1.5em;
+    vertical-align: bottom;
+}
+.melma.left {
+    transform: rotate(7deg);
+}
+.melma.right {
+    transform: rotate(-9deg);
 }
