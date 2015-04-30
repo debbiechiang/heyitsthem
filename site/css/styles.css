@@ -18,6 +18,7 @@ article,aside,details,figcaption,figure,footer,header,hgroup,nav,section,summary
 }
 
 body {
+    height: 100%;
     font-family: 'Raleway', sans-serif;
     text-align: center;
     background: rgb(68,102,129); /* Old browsers */
