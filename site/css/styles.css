@@ -94,11 +94,13 @@ input {
     text-transform: none;
     display: table;
     width: 100%;
+    box-shadow: 3px 2px 5px rgba(0, 0, 0, .5);
 }
 #actors .headShot{
     display: table-cell;
     vertical-align: middle;
     float: left;
+    border-radius: 8px 0 0 8px;
 }
 #actors .info{
     width: 100%;
