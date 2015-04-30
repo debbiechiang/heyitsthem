@@ -1,4 +1,4 @@
-// site/js/collections/workingMovie.js
+// site/js/collections/workingCollection.js
 
 var app = app || {};
 

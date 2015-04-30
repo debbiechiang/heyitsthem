@@ -9,20 +9,42 @@ app.QueryView = Backbone.View.extend({
 		this.listenTo(app.tmdb, 'search', this.searchInit);
 	},
 	events: {
-		'blur .tt-input': 'updateQuery'
+		"typeahead:selected": "updateQuery",
+		"blur .tt-input": "updateQuery"
 	},
-	updateQuery: function(){
+	updateQuery: function(event, suggestion, dataset){
 		var self = this; 
-		var newQuery = self.$('.tt-input').val().trim();
+		if (event.type === "typeahead:selected"){
+			// process autocomplete
+			var self = this; 
+			var i = parseInt(dataset.slice(4), 10);
+			var query = self.$('.tt-input').val().trim();
 
-		if (newQuery){
-			self.model.set({ query: newQuery});
-			// as of now, the model .hasChange() d. 
-			app.tmdb.collection.media[self.model.collection.indexOf(self.model)] = undefined;
+			// save the autocompletes
+			app.tmdb.collection.media[i] = suggestion;
+
+			// also save the query
+			self.model.set({query: query});
+			self.model.save();
+		} else {
+			// process a focusout
+			var newQuery = self.$('.tt-input').val().trim();
+			var oldQuery = self.model.get('query');
+
+			if (oldQuery !== null && oldQuery !== newQuery){
+				// as of now, the model .hasChange() d. 
+				// the query is no longer what was last autocompleted, so reset the 
+				// TMDBid of the media collection.
+				app.tmdb.collection.media[self.model.collection.indexOf(self.model)].TMDBid = null;
+			}
 		}
+
 	},
 	searchInit: function(){
 		var self = this; 
+		var query = self.$('.tt-input').val().trim();
+
+		self.model.set({query: query});
 		self.model.save();
 	},
 	render: function(){
@@ -42,7 +64,7 @@ app.QueryView = Backbone.View.extend({
 			}
 		});
 		if (typeof app.tmdb.collection.cast[i] === "undefined"){
-				app.tmdb.collection.cast.push(new app.Cast());
+			app.tmdb.collection.cast.push(new app.Cast());
 		} 
 		return self;
 	}

@@ -160,7 +160,7 @@ app.MovieCollection = Backbone.Collection.extend({
 
 	}
 });
-// site/js/collections/workingMovie.js
+// site/js/collections/workingCollection.js
 
 var app = app || {};
 
@@ -245,20 +245,42 @@ app.QueryView = Backbone.View.extend({
 		this.listenTo(app.tmdb, 'search', this.searchInit);
 	},
 	events: {
-		'blur .tt-input': 'updateQuery'
+		"typeahead:selected": "updateQuery",
+		"blur .tt-input": "updateQuery"
 	},
-	updateQuery: function(){
+	updateQuery: function(event, suggestion, dataset){
 		var self = this; 
-		var newQuery = self.$('.tt-input').val().trim();
+		if (event.type === "typeahead:selected"){
+			// process autocomplete
+			var self = this; 
+			var i = parseInt(dataset.slice(4), 10);
+			var query = self.$('.tt-input').val().trim();
 
-		if (newQuery){
-			self.model.set({ query: newQuery});
-			// as of now, the model .hasChange() d. 
-			app.tmdb.collection.media[self.model.collection.indexOf(self.model)] = undefined;
+			// save the autocompletes
+			app.tmdb.collection.media[i] = suggestion;
+
+			// also save the query
+			self.model.set({query: query});
+			self.model.save();
+		} else {
+			// process a focusout
+			var newQuery = self.$('.tt-input').val().trim();
+			var oldQuery = self.model.get('query');
+
+			if (oldQuery !== null && oldQuery !== newQuery){
+				// as of now, the model .hasChange() d. 
+				// the query is no longer what was last autocompleted, so reset the 
+				// TMDBid of the media collection.
+				app.tmdb.collection.media[self.model.collection.indexOf(self.model)].TMDBid = null;
+			}
 		}
+
 	},
 	searchInit: function(){
 		var self = this; 
+		var query = self.$('.tt-input').val().trim();
+
+		self.model.set({query: query});
 		self.model.save();
 	},
 	render: function(){
@@ -278,7 +300,7 @@ app.QueryView = Backbone.View.extend({
 			}
 		});
 		if (typeof app.tmdb.collection.cast[i] === "undefined"){
-				app.tmdb.collection.cast.push(new app.Cast());
+			app.tmdb.collection.cast.push(new app.Cast());
 		} 
 		return self;
 	}
@@ -332,11 +354,15 @@ app.SearchView = Backbone.View.extend({
 					});
 			}
 		})
-
+		
+		// TMDBCollection is a getter for the TMDB media api.
+		// cast is a getter for the TMDB credits api. 
+		// media (localStorage) is where autocorrect stores the quick-pull data from the TMDB media api.
+		// workingCast (localStorage) is where the cast info is stored to compute overlap. 
 		this.collection = {
 			TMDBcollection: new app.MovieCollection(),
 			workingCast: new app.WorkingCast(),
-			media: [],
+			media: [{mediaType: null, TMDBid: null}, {mediaType: null, TMDBid: null}],
 			cast: []
 		}
 
@@ -356,8 +382,8 @@ app.SearchView = Backbone.View.extend({
 
 	}, 
 	events: {
-		"click #search": "searchTMDB",
-		"typeahead:selected": "processAutocomplete"
+		"click #search": "searchTMDB"
+		// "typeahead:selected": "processAutocomplete"
 	}, 
 	searchTMDB: function(e){
 		e.preventDefault(); 
@@ -368,23 +394,22 @@ app.SearchView = Backbone.View.extend({
 		self.trigger("search");
 
 		// get the number of fields to check
-		self.fields = this.$(".tt-input").length;
+		self.fields = app.queries.collection.size();
 
 		// reset workingCast
 		self.working = [];
-
 		self.collection.workingCast.trigger("empty");
 		self.collection.workingCast.reset();
 
 		// typeahead will generate extra inputs, so after this.initialize 
 		// you must use .tt-input to mean the original inputs. 
-		this.$(".tt-input").each(function(i, el){
-			if ((self.collection.TMDBcollection.movieTitle = $.trim($(el).val())) != "") {
-				if (typeof self.collection.media[i] != "undefined"){
+		app.queries.collection.each(function(el, i){
+			if ((self.collection.TMDBcollection.movieTitle = el.get('query')) != "") {
+				if (self.collection.media[i].TMDBid !== null){
 					// the movie has been autocompleted and you can trust that this is the right 
 					// media title. Init a cast search on it. 
 					// console.log("Searching for "+ self.collection.media[i].title + ", " + self.collection.media[i].TMDBid);
-					self.getCastList(i, self.collection.media[i].get('mediaType'), self.collection.media[i].get('TMDBid'));
+					self.getCastList(i, self.collection.media[i].mediaType, self.collection.media[i].TMDBid);
 				} else {
 					// this didn"t autocomplete so you need to init a new search for it.
 					self.collection.TMDBcollection.fetch({
@@ -394,7 +419,7 @@ app.SearchView = Backbone.View.extend({
 								// take the first result returned
 								var model = collection.shift();
 
-								self.collection.media[i] = model;
+								self.collection.media[i] = model.toJSON();
 								self.getCastList(i, model.get("mediaType"), model.get("TMDBid"));
 							} else {
 								self.trigger("noResults");
@@ -430,15 +455,9 @@ app.SearchView = Backbone.View.extend({
 
 	},
 	processAutocomplete: function(event, suggestion, dataset){
-		var self = this; 
-
-		var i = dataset.slice(4);
-
-		// console.log(suggestion, i);
-
-		self.collection.media[i] = new app.Movie(suggestion);
-
-
+		// var self = this; 
+		// var i = parseInt(dataset.slice(4), 10);
+		// self.collection.media[i] = suggestion;
 	},
 	getCastList: function(i, mediaType, TMDBid){
 		var self = this;
