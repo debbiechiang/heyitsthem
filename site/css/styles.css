@@ -28,6 +28,7 @@ body {
     background: -ms-radial-gradient(center, ellipse cover,  rgb(34, 68, 89) 0%,rgba(17,51,72,1) 70%); /* IE10+ */
     background: radial-gradient(ellipse at center,  rgb(34, 68, 89) 0%,rgba(17,51,72,1) 70%); /* W3C */
     filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#446681', endColorstr='#113348',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+    background-size: contain;
     color: #f2f2f2;
     text-transform: uppercase;
 
