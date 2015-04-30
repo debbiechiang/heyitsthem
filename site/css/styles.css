@@ -20,9 +20,18 @@ article,aside,details,figcaption,figure,footer,header,hgroup,nav,section,summary
 body {
     font-family: 'Raleway', sans-serif;
     text-align: center;
-    background: #224459;
+    background: rgb(68,102,129); /* Old browsers */
+    background: -moz-radial-gradient(center, ellipse cover,  rgb(34, 68, 89) 0%, rgba(17,51,72,1) 70%); /* FF3.6+ */
+    background: -webkit-gradient(radial, center center, 0px, center center, 70%, color-stop(0%,rgb(34, 68, 89)), color-stop(70%,rgba(17,51,72,1))); /* Chrome,Safari4+ */
+    background: -webkit-radial-gradient(center, ellipse cover,  rgb(34, 68, 89) 0%,rgba(17,51,72,1) 70%); /* Chrome10+,Safari5.1+ */
+    background: -o-radial-gradient(center, ellipse cover,  rgb(34, 68, 89) 0%,rgba(17,51,72,1) 70%); /* Opera 12+ */
+    background: -ms-radial-gradient(center, ellipse cover,  rgb(34, 68, 89) 0%,rgba(17,51,72,1) 70%); /* IE10+ */
+    background: radial-gradient(ellipse at center,  rgb(34, 68, 89) 0%,rgba(17,51,72,1) 70%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#446681', endColorstr='#113348',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
     color: #f2f2f2;
     text-transform: uppercase;
+
+
 }
 h1 {
     margin: 0;
