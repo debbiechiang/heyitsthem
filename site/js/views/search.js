@@ -302,7 +302,7 @@ app.SearchView = Backbone.View.extend({
 				self.$('#actors').append(actorView.render().el);
 			});
 		} else {
-			console.log('NO OVERLAP FOUND');
+
 			actorView = new app.ActorView({
 				model: new app.Actor()
 			});
