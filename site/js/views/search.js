@@ -246,7 +246,6 @@ app.SearchView = Backbone.View.extend({
 				return el.pluck("TMDBid");
 			}));
 
-
 			castModels = _.map(castOverlap, function(tmdbid, i, list){
 				// get the list of roles for this tmdbid. 
 				var roles = _.map(casts, function(cast, i, list){
@@ -283,7 +282,8 @@ app.SearchView = Backbone.View.extend({
 	render: function(castOverlap){
 		var self = this;
 		var actorView; 
-		if (castOverlap){
+
+		if (castOverlap.length){
 			_.each(castOverlap, function(actor){
 				var actorModel  = new app.Actor(actor);
 				actorModel.set({
@@ -302,6 +302,7 @@ app.SearchView = Backbone.View.extend({
 				self.$('#actors').append(actorView.render().el);
 			});
 		} else {
+			console.log('NO OVERLAP FOUND');
 			actorView = new app.ActorView({
 				model: new app.Actor()
 			});
