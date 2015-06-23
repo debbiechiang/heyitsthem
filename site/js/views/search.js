@@ -36,7 +36,7 @@ app.SearchView = Backbone.View.extend({
 				}
 			}, 
 			error: function(model){
-				// get a new config obj anyway (?)
+				// get a new config obj anyway
 				$.get("http://api.themoviedb.org/3/configuration?api_key=" + self.apikey)
 					.done(function(data){
 						self.img.base_url = data.images.base_url;
@@ -75,7 +75,6 @@ app.SearchView = Backbone.View.extend({
 	}, 
 	events: {
 		"click #search": "searchTMDB"
-		// "typeahead:selected": "processAutocomplete"
 	}, 
 	searchTMDB: function(e){
 		e.preventDefault(); 
@@ -100,10 +99,9 @@ app.SearchView = Backbone.View.extend({
 				if (self.collection.media[i].TMDBid !== null){
 					// the movie has been autocompleted and you can trust that this is the right 
 					// media title. Init a cast search on it. 
-					// console.log("Searching for "+ self.collection.media[i].title + ", " + self.collection.media[i].TMDBid);
 					self.getCastList(i, self.collection.media[i].mediaType, self.collection.media[i].TMDBid);
 				} else {
-					// this didn"t autocomplete so you need to init a new search for it.
+					// this didn't autocomplete so you need to init a new search for it.
 					self.collection.TMDBcollection.fetch({
 						reset: true,
 						success: function (collection, response, options){
@@ -146,39 +144,28 @@ app.SearchView = Backbone.View.extend({
 			})
 
 	},
-	processAutocomplete: function(event, suggestion, dataset){
-		// var self = this; 
-		// var i = parseInt(dataset.slice(4), 10);
-		// self.collection.media[i] = suggestion;
-	},
 	getCastList: function(i, mediaType, TMDBid){
 		var self = this;
 		var cast = self.collection.cast[i];
-		// use the appropriate cast collection
-		// var cast = self.collection.cast[i];
+
 
 		// get the media type 
 		cast.mediaType = mediaType;
-		// get the Mongo ID for saving the cast list into the DB
-		// this.collection.cast.id = model.get("_id");
 		// get the TMDB id to search by 
 		cast.TMDBid = TMDBid;
 
-		// console.log("cast", cast);
 		if (cast.mediaType === "movie"){
 			cast.fetch({
 				success: function(collection, response, options){
 					self.working.push(collection);
 					self.trigger("checkOverlap", cast);
-					// self.working.push(self.collection.workingCast.add(model));
-
 				},
 				error: function(collection, response, options){
 					console.log("there was an error");
 				}
 			});
 		} else {
-			// it"s TV and you need to iterate through the cast list per season
+			// it's TV and you need to iterate through the cast list per season
 			// thanks TMDB
 
 			var seasons; 
@@ -192,11 +179,8 @@ app.SearchView = Backbone.View.extend({
 				_.times(seasons, function(n){
 					cast.season = n+1;
 
-					// var url = "http://api.themoviedb.org/3/tv/" + TMDBid + "/season/" + (n+1) + "/credits?api_key=3ad868d8cde55463944788618a489c37";
-					// console.log(url);
 					var p = cast.fetch({
 						success: function(collection, response, options){
-							// console.log(collection);
 							if (!fullCast){
 								fullCast = collection.clone(); 
 							} else {
@@ -218,21 +202,11 @@ app.SearchView = Backbone.View.extend({
 				});
 
 				$.when.apply($, promises).done(function(){
-					// console.log(cast, fullCast);
 					self.working.push(fullCast);
+				}).then(function(){
 					self.trigger("checkOverlap", fullCast);
 				});
 			});
-
-
-			
-
-			// send requests for each season
-			// _.each(seasons, function(el, i, list){
-			// 	$.get("http://api.themoviedb.org/3/tv/" + TMDBid + "/season/" + i + "/credits", {api_key: "3ad868d8cde55463944788618a489c37"}, function(data, textStatus, jqXHR){
-			// 		console.log(" cast for season " + i , data.cast);
-			// 	});
-			// });
 		}
 	},
 	getOverlap: function(castCollection){
@@ -260,7 +234,6 @@ app.SearchView = Backbone.View.extend({
 						character: memo.get("character") + ", " + role.get("character")
 					}
 				});
-
 
 				return actorModel;
 			})
